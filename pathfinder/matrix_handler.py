@@ -46,8 +46,8 @@ class Graph():
 class BinaryAcceptance(Graph):
 
     def __init__ (self, matrix:np.ndarray[bool, float],
-                  weights:list=None,
-                  threshold:float|None=None) -> None:
+                  weights:list|None = None,
+                  threshold:float|None = None) -> None:
         super().__init__()
         self.source = 0
         self.bin_acc = self.set_binary_acceptance(matrix, threshold)
@@ -72,9 +72,9 @@ class BinaryAcceptance(Graph):
         elif matrix.dtype == 'int' and threshold is None:
             print(f'{10*"#"} Warning! {10*"#"} \n\n Binary acceptance \
 is array of integers, converting format to True/False')
-            return np.array(matrix, dtype=bool)
+            return np.array(abs(matrix), dtype=bool)
         elif threshold is not None:
-            return matrix < threshold
+            return abs(matrix) < threshold
         else:
             raise ValueError('Binary acceptance is not Boolean type!, \
 \n Convert or provide threshold')
@@ -83,7 +83,7 @@ is array of integers, converting format to True/False')
     @staticmethod
     def set_weights(weights:list|None, size:int):
         if weights is None:
-            weights = [0] * size
+            weights = [1] * size
         else:
             weights = list(weights)
         if len(weights) == size:
