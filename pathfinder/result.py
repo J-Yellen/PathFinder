@@ -61,7 +61,7 @@ class Results():
 
     @property
     def best(self) -> Result:
-        return max(self.res)
+        return max(self._res)
 
     @staticmethod
     def bisect_left(to_bisect:list, num:object, lo_:int=0, hi_:int=None)->int:
@@ -83,8 +83,10 @@ class Results():
     def add_res(self, path:list, weight:float)-> None:
         res_ = Result(path=path, weight=weight)
         idx = self.bisect_left(self._res, res_)
+        # if idx == 0 and weight == self.best.weight:
+        #     idx += 1
         self._res.insert(idx, res_)
-        self._res = self._res[:self._top]
+        self._res = self.res
 
     def bulk_add(self, paths:list[list], weight:list[float])->None:
         if max(weight) > min(self.get_weights):

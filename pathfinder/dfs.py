@@ -106,10 +106,6 @@ class WHDFS(Results):
         Weighted Hereditary Depth First Search
         Returns best path for a given source under
         the weighted Hereditary condition.
-
-        max_wgt: maximum weight for running comparison
-        trim: (bool) trim the target node from result
-
         """
         cutoff = self.bam.dim + 1
         target = self.bam.dim
