@@ -17,7 +17,7 @@ class Result:
     path: list
     weight: float
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.sort_index = self.weight
 
     def __repr__(self) -> str:

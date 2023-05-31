@@ -73,7 +73,7 @@ def make_path0(paths:list, shift:bool=True)->dict:
         ret[i]['color'] = colors
     return ret
 
-def add_results(ax:plt.Axes, res:Results, lim:int):
+def add_results(ax:plt.Axes, res:Results, lim:int)->None:
     for i, item in make_path0(res.get_paths[:lim:], shift=True).items():
         for x, y, c in zip(item['x'], item['y'], item['color']):
             ax.plot(x, y, lw=3, color=c, linestyle='-')

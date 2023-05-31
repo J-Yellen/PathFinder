@@ -14,7 +14,7 @@ from .result import Results
 
 class HDFS(Results):
 
-    def __init__(self, binary_acceptance_obj:BinaryAcceptance, top:int=10):
+    def __init__(self, binary_acceptance_obj:BinaryAcceptance, top:int=10)-> None:
         """
         Hereditary Depth First Search
         """
@@ -70,7 +70,7 @@ class HDFS(Results):
             return list(islice(iterable, n))
         return iter(partial(take, n, iter(iterable)), [])
 
-    def find_paths(self, runs:int=None, verbose=False) -> dict:
+    def find_paths(self, runs:int=None, verbose=False) -> None:
         """
         Evaluate the available paths/subsets
         runs: number of initial nodes starting from 0
@@ -92,7 +92,7 @@ class HDFS(Results):
 
 class WHDFS(Results):
 
-    def __init__(self, binary_acceptance_obj:BinaryAcceptance, top:int=10):
+    def __init__(self, binary_acceptance_obj:BinaryAcceptance, top:int=10) -> None:
         """
         Weighted Hereditary Depth First Search
         """
@@ -101,7 +101,7 @@ class WHDFS(Results):
         self.weight_func = self.bam.get_weight
         self.wlimit_func = self.bam.get_weight
 
-    def whdfs(self) -> dict:
+    def whdfs(self) -> None:
         """
         Weighted Hereditary Depth First Search
         Returns best path for a given source under
@@ -144,7 +144,7 @@ class WHDFS(Results):
                 good_nodes.pop()
                 visited.popitem()
 
-    def find_paths(self, runs:int=None, verbose:bool=False) -> dict:
+    def find_paths(self, runs:int=None, verbose:bool=False) -> None:
         """
         Evaluate the available paths/subsets
         runs: number of initial nodes starting from 0

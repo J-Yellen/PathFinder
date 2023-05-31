@@ -34,7 +34,7 @@ class Graph():
             self._node = {}
         self.__construct_adj(edges)
 
-    def edges(self, srce:int=None)->list:
+    def edges(self, srce:int=None)-> list:
         if isinstance(srce, list):
             srce = srce[0]
         if srce is None:
@@ -55,12 +55,12 @@ class BinaryAcceptance(Graph):
         self.set_weighted_graph()
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self.bin_acc.shape[0]
 
     # setter method
     @staticmethod
-    def set_binary_acceptance(matrix:np.ndarray, threshold:float|None=None)->np.ndarray:
+    def set_binary_acceptance(matrix:np.ndarray, threshold:float|None=None)-> np.ndarray:
         if matrix.ndim != 2:
             raise ValueError('Binary acceptance is not a 2d array')
 
@@ -81,7 +81,7 @@ is array of integers, converting format to True/False')
 
     # setter method
     @staticmethod
-    def set_weights(weights:list|None, size:int):
+    def set_weights(weights:list|None, size:int)-> np.ndarray:
         if weights is None:
             weights = [1] * size
         else:
