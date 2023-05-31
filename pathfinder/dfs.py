@@ -75,6 +75,9 @@ class HDFS(Results):
         Evaluate the available paths/subsets
         runs: number of initial nodes starting from 0
         """
+        if len(self.res) > 1:
+            super().__init__(paths=[[]], weights=[0.0], top=self.top)
+
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
         for i in range(0, runs):

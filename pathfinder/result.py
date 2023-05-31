@@ -27,11 +27,11 @@ class Results():
     """
     Results class to handle lists of Result (path, weight) objects
     """
-    def __init__(self, paths:list[list], weights:list[float], top:int|None=None):
+    def __init__(self, paths:list[list], weights:list[float], top:int=1):
         if len(paths) != len(weights):
             raise ValueError("Unequal length lists provided!")
         self._res = self.__set_res(paths, weights)
-        self._top = self.__set_top(top)
+        self._top = top
 
     #setter
     @staticmethod
@@ -41,11 +41,13 @@ class Results():
             return sorted(res, reverse=True)
         return res
 
-    #setter
-    def __set_top(self, top:int)->int:
-        if top is None:
-            return len(self._res)
-        return int(top)
+    @property
+    def top(self)->None:
+        return self._top
+
+    @top.setter
+    def top(self, top)->None:
+            self._top = top
 
     @property
     def res(self) -> List[Result]:
@@ -62,7 +64,7 @@ class Results():
     @property
     def best(self) -> Result:
         return max(self._res)
-
+    
     @staticmethod
     def bisect_left(to_bisect:list, num:object, lo_:int=0, hi_:int=None)->int:
         if hi_ is None:
@@ -80,23 +82,19 @@ class Results():
             self._res = sorted(self._res, reverse=True)[:self._top]
         self._res = sorted(self._res, reverse=True)
 
-    def add_res(self, path:list, weight:float)-> None:
+    def add_res(self, path:list, weight:float, trim_to_top:bool=True)-> None:
         res_ = Result(path=path, weight=weight)
-        idx = self.bisect_left(self._res, res_)
-        # if idx == 0 and weight == self.best.weight:
-        #     idx += 1
-        self._res.insert(idx, res_)
-        self._res = self.res
+        if res_ not in self._res:
+            idx = self.bisect_left(self._res, res_)
+            self._res.insert(idx, res_)
+        if trim_to_top:
+            self._res = self.res
 
     def bulk_add(self, paths:list[list], weight:list[float])->None:
         if max(weight) > min(self.get_weights):
-            #self._res = self.__set_res(paths + self.get_paths, weight + self.get_weights)
-            self._res += self.__set_res(paths, weight, sort=False)
+            new_res = self.__set_res(paths, weight, sort=False)
+            self._res += new_res
             self.res_sort(trim=True)
-
-    def reset_top(self, new_top:int)-> None:
-        self.__set_top(new_top)
-        self.res_sort()
 
     def __str__(self):
         return ",\n".join([f"{i+1}: {item}" for i, item in enumerate(self.res)])
