@@ -10,8 +10,12 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.colors import ListedColormap
 from matplotlib import cm
+from matplotlib import font_manager
 from .matrix_handler import BinaryAcceptance
 from .result import Results
+
+import logging
+logging.getLogger('matplotlib.font_manager').disabled = True
 
 plt.rcParams['legend.handlelength'] = 1
 plt.rcParams['legend.handleheight'] = 1
@@ -19,8 +23,13 @@ plt.rcParams['legend.handleheight'] = 1
 plt.rcParams['savefig.dpi'] = 300
 plt.rcParams['axes.facecolor'] = 'white'
 plt.rcParams["font.family"] = "serif"
-plt.rcParams["font.serif"] =  ["Palatino"]
 plt.rcParams["mathtext.fontset"] = "cm"
+
+fonts = font_manager.findSystemFonts(fontpaths=None, fontext='ttf')
+if bool ( sum ( [ "Palatino" in f for f in fonts ] ) ):
+    plt.rcParams["font.serif"] =  ["Palatino"]
+    
+#plt.rcParams["font.serif"] =  ["Palatino"]
 #plt.rcParams["axes.grid"] = False
 
 def set_legend(ax:plt.Axes)->None:
