@@ -46,14 +46,6 @@ class Results():
             return sorted(res, reverse=True)
         return res
 
-    # @staticmethod
-    # def __set_res_no_ss(pths:list[set], wghts:list[float], sort:bool=True) -> List[Result]:
-    #     all_res = [Result(path=set(p), weight=w) for p, w in zip(pths, wghts)]
-    #     res = [item for item in all_res if not any(item < pth for pth in all_res)]
-    #     if sort:
-    #         return sorted(res, reverse=True)
-    #     return res
-
     @property
     def top(self)->None:
         return self._top
