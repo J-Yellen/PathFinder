@@ -14,11 +14,11 @@ from .result import Results
 
 class HDFS(Results):
 
-    def __init__(self, binary_acceptance_obj:BinaryAcceptance, top:int=10)-> None:
+    def __init__(self, binary_acceptance_obj:BinaryAcceptance, top:int=10, ignore_subset:bool=True)-> None:
         """
         Hereditary Depth First Search
         """
-        super().__init__(paths=[[]], weights=[0.0], top=top)
+        super().__init__(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
 
@@ -95,11 +95,11 @@ class HDFS(Results):
 
 class WHDFS(Results):
 
-    def __init__(self, binary_acceptance_obj:BinaryAcceptance, top:int=10) -> None:
+    def __init__(self, binary_acceptance_obj:BinaryAcceptance, top:int=10, ignore_subset:bool=True) -> None:
         """
         Weighted Hereditary Depth First Search
         """
-        super().__init__(paths=[[]], weights=[0.0], top=top)
+        super().__init__(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
         self.wlimit_func = self.bam.get_weight

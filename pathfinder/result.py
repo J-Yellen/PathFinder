@@ -14,32 +14,45 @@ class Result:
     sort index = weight for comparison
     """
     sort_index: float = field(init=False, repr=False)
-    path: list
+    path: set
     weight: float
 
     def __post_init__(self) -> None:
         self.sort_index = self.weight
 
     def __repr__(self) -> str:
-        return f"Path = {self.path},  Weight = {self.weight}"
+        return f"Path = {sorted(self.path)},  Weight = {self.weight}"
 
 class Results():
     """
     Results class to handle lists of Result (path, weight) objects
     """
-    def __init__(self, paths:list[list], weights:list[float], top:int=1):
+    def __init__(self, paths:list[set], weights:list[float], top:int=1, ignore_subset:bool=False):
         if len(paths) != len(weights):
             raise ValueError("Unequal length lists provided!")
+        self.ignore_subset = ignore_subset
         self._res = self.__set_res(paths, weights)
         self._top = top
+        
 
     #setter
-    @staticmethod
-    def __set_res(pths:list[list], wghts:list[float], sort:bool=True) -> List[Result]:
-        res = [Result(path=p, weight=w) for p, w in zip(pths, wghts)]
+    def __set_res(self, pths:list[set], wghts:list[float], sort:bool=True) -> List[Result]:
+        all_res = [Result(path=set(p), weight=w) for p, w in zip(pths, wghts)]
+        if self.ignore_subset:
+            res = [item for item in all_res if not any(item.path < pth.path for pth in all_res)]
+        else:
+            res = all_res
         if sort:
             return sorted(res, reverse=True)
         return res
+
+    # @staticmethod
+    # def __set_res_no_ss(pths:list[set], wghts:list[float], sort:bool=True) -> List[Result]:
+    #     all_res = [Result(path=set(p), weight=w) for p, w in zip(pths, wghts)]
+    #     res = [item for item in all_res if not any(item < pth for pth in all_res)]
+    #     if sort:
+    #         return sorted(res, reverse=True)
+    #     return res
 
     @property
     def top(self)->None:
@@ -59,6 +72,10 @@ class Results():
 
     @property
     def get_paths(self) -> List[list]:
+        return [sorted(item.path) for item in self.res]
+
+    @property
+    def get_raw_paths(self) -> List[list]:
         return [item.path for item in self.res]
 
     @property
@@ -82,19 +99,28 @@ class Results():
             self._res = sorted(self._res, reverse=True)[:self._top]
         self._res = sorted(self._res, reverse=True)
 
-    def add_res(self, path:list, weight:float, trim_to_top:bool=True)-> None:
-        res_ = Result(path=path, weight=weight)
+    def add_res(self, path:set, weight:float, trim_to_top:bool=True, bisect=True)-> None:
+        res_ = Result(path=set(path), weight=weight)
+        if self.ignore_subset:
+            if any(res_.path < pth for pth in self.get_raw_paths):
+                return
         if res_ not in self._res:
-            idx = self.bisect_left(self._res, res_)
-            self._res.insert(idx, res_)
+            if bisect:
+                idx = self.bisect_left(self._res, res_)
+                self._res.insert(idx, res_)
+            else:
+                self._res.append(res_)
         if trim_to_top:
             self._res = self.res
 
-    def bulk_add(self, paths:list[list], weight:list[float])->None:
+    def bulk_add(self, paths:list[set], weight:list[float])->None:
         if max(weight) > min(self.get_weights):
-            new_res = self.__set_res(paths, weight, sort=False)
-            self._res += new_res
-            self.res_sort(trim=True)
+            if self.ignore_subset:
+                for pth, wgt in zip(paths, weight):
+                    self.add_res(pth, wgt)
+            else:
+                self._res += self.__set_res(paths, weight, sort=True)
+                self.res_sort(trim=True)
 
     def __str__(self):
         return ",\n".join([f"{i+1}: {item}" for i, item in enumerate(self.res)])
