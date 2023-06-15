@@ -5,7 +5,7 @@
 #####################################
 """
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Union
 
 @dataclass(order=True)
 class Result:
@@ -35,7 +35,7 @@ class Results():
         self._top = top
 
     #setter
-    def __set_res(self, pths:list[set], wghts:list[float], sort:bool=True) -> List[Result]:
+    def __set_res(self, pths:list, wghts:list, sort:bool=True) -> List:
         all_res = [Result(path=set(p), weight=w) for p, w in zip(pths, wghts)]
         if self.ignore_subset:
             res = [item for item in all_res if not any(item.path < pth.path for pth in all_res)]
