@@ -6,6 +6,7 @@
 #####################################
 """
 import numpy as np
+from typing import Union
 
 class Graph():
 
@@ -45,9 +46,9 @@ class Graph():
 
 class BinaryAcceptance(Graph):
 
-    def __init__ (self, matrix:np.ndarray[bool, float],
-                  weights:list|None = None,
-                  threshold:float|None = None) -> None:
+    def __init__ (self, matrix:np.ndarray,
+                  weights:Union[list, None] = None,
+                  threshold:float = None) -> None:
         super().__init__()
         self.source = 0
         self.bin_acc = self.set_binary_acceptance(matrix, threshold)
@@ -60,7 +61,7 @@ class BinaryAcceptance(Graph):
 
     # setter method
     @staticmethod
-    def set_binary_acceptance(matrix:np.ndarray, threshold:float|None=None)-> np.ndarray:
+    def set_binary_acceptance(matrix:np.ndarray, threshold:Union[float, None])-> np.ndarray:
         if matrix.ndim != 2:
             raise ValueError('Binary acceptance is not a 2d array')
 
@@ -81,7 +82,7 @@ is array of integers, converting format to True/False')
 
     # setter method
     @staticmethod
-    def set_weights(weights:list|None, size:int)-> np.ndarray:
+    def set_weights(weights:Union[list, None], size:int)-> np.ndarray:
         if weights is None:
             weights = [1] * size
         else:

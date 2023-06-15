@@ -13,6 +13,7 @@ from matplotlib import cm
 from matplotlib import font_manager
 from .matrix_handler import BinaryAcceptance
 from .result import Results
+from typing import Union
 
 import logging
 logging.getLogger('matplotlib.font_manager').disabled = True
@@ -87,7 +88,7 @@ def add_results(ax:plt.Axes, res:Results, lim:int)->None:
         for x, y, c in zip(item['x'], item['y'], item['color']):
             ax.plot(x, y, lw=3, color=c, linestyle='-')
 
-def plot(bam:BinaryAcceptance, result:Results|None=None, top:int=None)-> plt.Axes:
+def plot(bam:BinaryAcceptance, result:Union[Results, None]=None, top:int=None)-> plt.Axes:
 
     cmap = ListedColormap(['k', 'darkgrey', 'lightgrey', 'w'], name='bwg')
     dat = np.array(bam.bin_acc, dtype=float, copy=True)

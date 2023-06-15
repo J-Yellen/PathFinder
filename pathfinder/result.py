@@ -27,7 +27,7 @@ class Results():
     """
     Results class to handle lists of Result (path, weight) objects
     """
-    def __init__(self, paths:list[list], weights:list[float], top:int=1):
+    def __init__(self, paths:list, weights:list, top:int=1):
         if len(paths) != len(weights):
             raise ValueError("Unequal length lists provided!")
         self._res = self.__set_res(paths, weights)
@@ -35,7 +35,7 @@ class Results():
 
     #setter
     @staticmethod
-    def __set_res(pths:list[list], wghts:list[float], sort:bool=True) -> List[Result]:
+    def __set_res(pths:list, wghts:list, sort:bool=True) -> List:
         res = [Result(path=p, weight=w) for p, w in zip(pths, wghts)]
         if sort:
             return sorted(res, reverse=True)
@@ -50,15 +50,15 @@ class Results():
             self._top = top
 
     @property
-    def res(self) -> List[Result]:
+    def res(self) -> List:
         return self._res[:self._top]
 
     @property
-    def get_weights(self) -> List[float]:
+    def get_weights(self) -> List:
         return [item.weight for item in self.res]
 
     @property
-    def get_paths(self) -> List[list]:
+    def get_paths(self) -> List:
         return [item.path for item in self.res]
 
     @property
@@ -77,7 +77,7 @@ class Results():
                 hi_ = mid
         return lo_
 
-    def res_sort(self, trim:bool=True)->List[Result]:
+    def res_sort(self, trim:bool=True)->List:
         if trim:
             self._res = sorted(self._res, reverse=True)[:self._top]
         self._res = sorted(self._res, reverse=True)
@@ -90,7 +90,7 @@ class Results():
         if trim_to_top:
             self._res = self.res
 
-    def bulk_add(self, paths:list[list], weight:list[float])->None:
+    def bulk_add(self, paths:list, weight:list)->None:
         if max(weight) > min(self.get_weights):
             new_res = self.__set_res(paths, weight, sort=False)
             self._res += new_res
