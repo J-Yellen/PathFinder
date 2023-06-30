@@ -102,7 +102,7 @@ class WHDFS(Results):
         super().__init__(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
-        self.wlimit_func = self.bam.get_weight_lim
+        self.wlimit_func = self.bam.get_weight_lim if ignore_subset else self.bam.get_abs_weight_lim
 
     def whdfs(self) -> None:
         """
