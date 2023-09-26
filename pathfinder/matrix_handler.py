@@ -73,9 +73,9 @@ class BinaryAcceptance(Graph):
         elif matrix.dtype == 'int' and threshold is None:
             print(f'{10*"#"} Warning! {10*"#"} \n\n Binary acceptance \
 is array of integers, converting format to True/False')
-            return np.array(abs(matrix), dtype=bool)
+            return np.array(matrix, dtype=bool)
         elif threshold is not None:
-            return abs(matrix) < threshold
+            return matrix < threshold
         else:
             raise ValueError('Binary acceptance is not Boolean type!, \
 \n Convert or provide threshold')
@@ -136,7 +136,8 @@ is array of integers, converting format to True/False')
 
         if path:
             wghts = self.weights[path]
-            return np.sum(wghts[wghts >= 0.0])
+            #return np.sum(wghts[wghts >= 0.0])
+            return np.sum(wghts)
         return 0.0
 
     def get_abs_weight_lim(self, path:list) -> float:
@@ -156,3 +157,10 @@ is array of integers, converting format to True/False')
             source = 0
         self.source = source
         self.set_weighted_graph()
+    
+    def sort_bam_by_weight(self) -> np.ndarray:
+        index_map = np.argsort(self.weights[:-1:])[::-1]
+        self.weights = np.sort(self.weights)[::-1]
+        self.bin_acc = self.bin_acc[index_map, :][:, index_map]
+        return index_map
+
