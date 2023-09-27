@@ -4,7 +4,7 @@
 # Author J.Yellen                   #
 #####################################
 """
-
+from typing import Iterable, Iterator
 from functools import partial
 from itertools import islice
 import numpy as np
@@ -22,7 +22,7 @@ class HDFS(Results):
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
 
-    def hdfs(self, trim:bool=True) -> list:
+    def hdfs(self, trim:bool=True) -> Iterable:
         """
         Hereditary Depth First Search
         Returns all paths under the Hereditary condition.
@@ -64,13 +64,13 @@ class HDFS(Results):
                 visited.popitem()
 
     @staticmethod
-    def chunked(iterable, n):
+    def chunked(iterable:Iterable, n:int)->Iterator:
         """Break *iterable* into lists of length *n*:"""
         def take(n, iterable):
             return list(islice(iterable, n))
         return iter(partial(take, n, iter(iterable)), [])
 
-    def find_paths(self, runs:int=None, verbose=False) -> None:
+    def find_paths(self, runs:int=None, verbose:bool=False) -> None:
         """
         Evaluate the available paths/subsets
         runs: number of initial nodes starting from 0
@@ -84,11 +84,8 @@ class HDFS(Results):
         for i in range(0, runs):
             all_p = self.hdfs()
             for item in self.chunked(all_p, 500):
-                #paths = list(item)
-                #weights = [self.weight_func(p) for p in paths if p]
                 paths = [p for p in item if p]
                 weights = [self.weight_func(p) for p in paths]
-                #print(paths)
                 self.bulk_add(paths, weights)
             if i < self.bam.dim-1:
                 self.bam.reset_source(i+1)
