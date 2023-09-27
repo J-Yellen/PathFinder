@@ -164,3 +164,7 @@ is array of integers, converting format to True/False')
         self.bin_acc = self.bin_acc[index_map, :][:, index_map]
         return index_map
 
+
+
+
+
