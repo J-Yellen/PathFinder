@@ -143,7 +143,8 @@ is array of integers, converting format to True/False')
 
         if path:
             wghts = self.weights[path]
-            return np.sum(np.abs(wghts))
+            #return np.sum(np.abs(wghts))
+            return np.sum(wghts)
         return 0.0
 
     def reset_source(self, source:int=0)-> None:
@@ -155,3 +156,9 @@ is array of integers, converting format to True/False')
             source = 0
         self.source = source
         self.set_weighted_graph()
+
+    def sort_bam_by_weight(self) -> np.ndarray:
+        index_map = np.argsort(self.weights[:-1:])[::-1]
+        self.weights = np.sort(self.weights)[::-1]
+        self.bin_acc = self.bin_acc[index_map, :][:, index_map]
+        return index_map
