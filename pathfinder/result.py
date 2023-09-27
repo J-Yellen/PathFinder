@@ -33,7 +33,7 @@ class Results():
         self.ignore_subset = ignore_subset
         self._res = self.__set_res(paths, weights)
         self._top = top
-        
+
 
     #setter
     def __set_res(self, pths:list[set], wghts:list[float], sort:bool=True) -> List[Result]:
@@ -73,7 +73,7 @@ class Results():
     @property
     def best(self) -> Result:
         return max(self._res)
-    
+
     @staticmethod
     def bisect_left(to_bisect:list, num:object, lo_:int=0, hi_:int=None)->int:
         if hi_ is None:
