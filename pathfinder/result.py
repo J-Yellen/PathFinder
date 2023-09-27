@@ -114,5 +114,12 @@ class Results():
                 self._res += self.__set_res(paths, weight, sort=True)
                 self.res_sort(trim=True)
 
+    def remap_path(self, index_map:list)->list[Result]:
+        ret = []
+        for item in self.res:
+            map_path = set([index_map[i] for i in item.path])
+            ret.append(Result(path=map_path, weight=item.weight))
+        return ret
+
     def __str__(self):
         return ",\n".join([f"{i+1}: {item}" for i, item in enumerate(self.res)])
