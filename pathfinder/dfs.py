@@ -18,7 +18,7 @@ class HDFS(Results):
         """
         Hereditary Depth First Search
         """
-        super().__init__(paths=[[]], weights=[0.0], top=top, ignore_subset=ignore_subset)
+        super().__init__(paths=[[]], weights=[-np.inf], top=top, ignore_subset=ignore_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
 
@@ -75,18 +75,21 @@ class HDFS(Results):
         Evaluate the available paths/subsets
         runs: number of initial nodes starting from 0
         """
+        self.bam.reset_source()
         if len(self.res) > 1:
-            super().__init__(paths=[[]], weights=[0.0], top=self.top)
-
+            super().__init__(paths=[[]], weights=[-np.inf], top=self.top, ignore_subset=self.ignore_subset)
+        
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
         for i in range(0, runs):
             all_p = self.hdfs()
             for item in self.chunked(all_p, 500):
-                paths = list(item)
-                weights = [self.weight_func(p) for p in paths if p]
+                #paths = list(item)
+                #weights = [self.weight_func(p) for p in paths if p]
+                paths = [p for p in item if p]
+                weights = [self.weight_func(p) for p in paths]
+                #print(paths)
                 self.bulk_add(paths, weights)
-                self
             if i < self.bam.dim-1:
                 self.bam.reset_source(i+1)
         self.bam.reset_source()
@@ -99,7 +102,7 @@ class WHDFS(Results):
         """
         Weighted Hereditary Depth First Search
         """
-        super().__init__(paths=[[]], weights=[0.0], top=top, ignore_subset=ignore_subset)
+        super().__init__(paths=[[]], weights=[-np.inf], top=top, ignore_subset=ignore_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
         self.wlimit_func = self.bam.get_weight_lim if ignore_subset else self.bam.get_abs_weight_lim
@@ -112,34 +115,53 @@ class WHDFS(Results):
         """
         cutoff = self.bam.dim + 1
         target = self.bam.dim
-        visited = dict.fromkeys([self.bam.source])                          # initiate the visited list with the source node
-        stack = [(v for _, v in self.bam.edges(self.bam.source))]           # list of generators that builds to provide the subset of available nodes for each child with all nodes > child
-        good_nodes = [set(v for _, v in self.bam.edges(self.bam.source))]   # compleat set of available nodes for each child
-        max_wgt = np.array(self.get_weights)                                # get current max weight
-        while stack:                                                        # iterate over nodes building and dropping from stack until empty
-            children = stack[-1]                                            # define children as the generator from the last element of stack
-            child = next(children, None)                                    # The child node is the next element from children
-            if child is None:                                               # if no child drop last elements from stack, good nodes and visited
+        # initiate the visited list with the source node
+        visited = dict.fromkeys([self.bam.source])
+        # list of generators that builds to provide the subset of available nodes for each child with all nodes > child
+        stack = [(v for _, v in self.bam.edges(self.bam.source))]
+        # compleat set of available nodes for each child
+        good_nodes = [set(v for _, v in self.bam.edges(self.bam.source))]
+        # get current max weight
+        max_wgt = np.array(self.get_weights)
+        # iterate over nodes building and dropping from stack until empty
+        while stack:
+             # define children as the generator from the last element of stack
+            children = stack[-1]
+            # The child node is the next element from children
+            child = next(children, None)
+            # if no child drop last elements from stack, good nodes and visited
+            if child is None:
                 stack.pop()
                 good_nodes.pop()
                 visited.popitem()
-            elif len(visited) < cutoff:                                             # number of nodes in path less then the length of the correlations
-                if child in visited:                                                # ensure no repeated nodes
+            # number of nodes in path less then the length of the correlations
+            elif len(visited) < cutoff:
+                # ensure no repeated nodes
+                if child in visited:
                     continue
-                pth = list(visited) + [child]                                               # define current path bing considered
-                gn = set(v for _, v in self.bam.edges(child)).intersection(good_nodes[-1])  # Intersection of nodes available to the child with those available to all previous nodes in path
-                child_pths = np.array(list(gn))                                             # list the available nodes from the set gn
-                currnt_wgt = self.weight_func(pth)                                      # weight of current path
-                remain_wgt = self.wlimit_func(list(child_pths[(child_pths > child)]))   # upper limit on the weight available to the child
+                # define current path bing considered
+                pth = list(visited) + [child]
+                # Intersection of nodes available to the child with those available to all previous nodes in path
+                gn = set(v for _, v in self.bam.edges(child)).intersection(good_nodes[-1])
+                # list the available nodes from the set gn
+                child_pths = np.array(list(gn))
+                # weight of current path
+                currnt_wgt = self.weight_func(pth)
+                # upper limit on the weight available to the child
+                remain_wgt = self.wlimit_func(list(child_pths[(child_pths > child)]))
                 if child == target:
                     if currnt_wgt > max_wgt.min():
-                        self.add_res(pth[:-1:], currnt_wgt)                                         # update result
+                        # update result
+                        self.add_res(pth[:-1:], currnt_wgt)
                         max_wgt = np.array(self.get_weights)
-                if (currnt_wgt + remain_wgt) > max_wgt.min():                                       # is the remaining weight enough to continue "down this route"
+                 # is the remaining weight enough to continue "down this route"
+                if (currnt_wgt + remain_wgt) > max_wgt.min():
                     visited[child] = None
                     if target not in visited:
-                        good_nodes.append(gn)                                                       # add gn to good nodes
-                        stack.append((v for _, v in self.bam.edges(child) if v in good_nodes[-1]))  # add the nest node generator to stack
+                        # add gn to good nodes
+                        good_nodes.append(gn)
+                        # add the nest node generator to stack
+                        stack.append((v for _, v in self.bam.edges(child) if v in good_nodes[-1]))
                     else:
                         visited.popitem()
             else:  # len(visited) == cutoff:
@@ -152,6 +174,10 @@ class WHDFS(Results):
         Evaluate the available paths/subsets
         runs: number of initial nodes starting from 0
         """
+        self.bam.reset_source()
+        if len(self.res) > 1:
+            super().__init__(paths=[[]], weights=[-np.inf], top=self.top, ignore_subset=self.ignore_subset)
+
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
 
