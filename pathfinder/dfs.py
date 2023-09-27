@@ -75,8 +75,9 @@ class HDFS(Results):
         Evaluate the available paths/subsets
         runs: number of initial nodes starting from 0
         """
+        self.bam.reset_source()
         if len(self.res) > 1:
-            super().__init__(paths=[[]], weights=[0.0], top=self.top)
+            super().__init__(paths=[[]], weights=[-np.inf], top=self.top, ignore_subset=self.ignore_subset)
 
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
@@ -152,6 +153,9 @@ class WHDFS(Results):
         Evaluate the available paths/subsets
         runs: number of initial nodes starting from 0
         """
+        self.bam.reset_source()
+        if len(self.res) > 1:
+            super().__init__(paths=[[]], weights=[-np.inf], top=self.top, ignore_subset=self.ignore_subset)
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
 
