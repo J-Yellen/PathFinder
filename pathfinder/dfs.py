@@ -82,8 +82,7 @@ class HDFS(Results):
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
         for i in range(0, runs):
-            all_p = self.hdfs()
-            for item in self.chunked(all_p, 500):
+            for item in self.chunked(self.hdfs(), 500):
                 paths = [p for p in item if p]
                 weights = [self.weight_func(p) for p in paths]
                 self.bulk_add(paths, weights)
