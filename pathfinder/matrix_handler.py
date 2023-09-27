@@ -131,15 +131,6 @@ is array of integers, converting format to True/False')
             return np.sum(self.weights[path])
         return 0.0
 
-    def get_weight_lim(self, path:list) -> float:
-        """ Get the sum of the weights for a given path of indices"""
-
-        if path:
-            wghts = self.weights[path]
-            #return np.sum(wghts[wghts >= 0.0])
-            return np.sum(wghts)
-        return 0.0
-
     def get_abs_weight_lim(self, path:list) -> float:
         """ Get the sum of the weights for a given path of indices"""
 
