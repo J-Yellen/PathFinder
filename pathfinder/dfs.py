@@ -4,7 +4,7 @@
 # Author J.Yellen                   #
 #####################################
 """
-
+from typing import Iterable, Iterator
 from functools import partial
 from itertools import islice
 import numpy as np
@@ -22,7 +22,7 @@ class HDFS(Results):
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
 
-    def hdfs(self, trim:bool=True) -> list:
+    def hdfs(self, trim:bool=True) -> Iterator:
         """
         Hereditary Depth First Search
         Returns all paths under the Hereditary condition.
@@ -64,7 +64,7 @@ class HDFS(Results):
                 visited.popitem()
 
     @staticmethod
-    def chunked(iterable, n):
+    def chunked(iterable:Iterable, n:int) -> Iterator:
         """Break *iterable* into lists of length *n*:"""
         def take(n, iterable):
             return list(islice(iterable, n))
