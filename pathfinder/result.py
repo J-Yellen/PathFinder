@@ -7,6 +7,7 @@
 from dataclasses import dataclass, field
 from typing import List
 
+
 @dataclass(order=True)
 class Result:
     """
@@ -23,20 +24,20 @@ class Result:
     def __repr__(self) -> str:
         return f"Path = {sorted(self.path)},  Weight = {self.weight}"
 
+
 class Results():
     """
     Results class to handle lists of Result (path, weight) objects
     """
-    def __init__(self, paths:list[set], weights:list[float], top:int=1, ignore_subset:bool=False):
+    def __init__(self, paths: List[set], weights: List[float], top: int = 1, ignore_subset: bool = False):
         if len(paths) != len(weights):
             raise ValueError("Unequal length lists provided!")
         self.ignore_subset = ignore_subset
-        self._res = self.__set_res(paths, weights)
+        self._res = self._set_res(paths, weights)
         self._top = top
 
-
-    #setter
-    def __set_res(self, pths:list[set], wghts:list[float], sort:bool=True) -> List[Result]:
+    # setter
+    def _set_res(self, pths: List[set], wghts: List[float], sort: bool = True) -> List[Result]:
         all_res = [Result(path=set(p), weight=w) for p, w in zip(pths, wghts)]
         if self.ignore_subset:
             res = [item for item in all_res if not any(item.path < pth.path for pth in all_res)]
@@ -47,12 +48,12 @@ class Results():
         return res
 
     @property
-    def top(self)->None:
+    def top(self) -> None:
         return self._top
 
     @top.setter
-    def top(self, top)->None:
-            self._top = top
+    def top(self, top) -> None:
+        self._top = top
 
     @property
     def res(self) -> List[Result]:
@@ -75,7 +76,7 @@ class Results():
         return max(self._res)
 
     @staticmethod
-    def bisect_left(to_bisect:list, num:object, lo_:int=0, hi_:int=None)->int:
+    def bisect_left(to_bisect: list, num: object, lo_: int = 0, hi_: int = None) -> int:
         if hi_ is None:
             hi_ = len(to_bisect)
         while lo_ < hi_:
@@ -86,12 +87,12 @@ class Results():
                 hi_ = mid
         return lo_
 
-    def res_sort(self, trim:bool=True)->List[Result]:
+    def res_sort(self, trim: bool = True) -> List[Result]:
         if trim:
             self._res = sorted(self._res, reverse=True)[:self._top]
         self._res = sorted(self._res, reverse=True)
 
-    def add_res(self, path:set, weight:float, trim_to_top:bool=True, bisect=True)-> None:
+    def add_res(self, path: set, weight: float, trim_to_top: bool = True, bisect=True) -> None:
         res_ = Result(path=set(path), weight=weight)
         if self.ignore_subset:
             if any(res_.path < pth for pth in self.get_raw_paths):
@@ -105,7 +106,7 @@ class Results():
         if trim_to_top:
             self._res = self.res
 
-    def bulk_add(self, paths:list[set], weight:list[float])->None:
+    def bulk_add(self, paths: list[set], weight: list[float]) -> None:
         if max(weight) > min(self.get_weights):
             if self.ignore_subset:
                 for pth, wgt in zip(paths, weight):
@@ -114,7 +115,7 @@ class Results():
                 self._res += self.__set_res(paths, weight, sort=True)
                 self.res_sort(trim=True)
 
-    def remap_path(self, index_map:list)->list[Result]:
+    def remap_path(self, index_map: list) -> list[Result]:
         ret = []
         for item in self.res:
             map_path = set([index_map[i] for i in item.path])
