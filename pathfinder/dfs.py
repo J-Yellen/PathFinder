@@ -4,12 +4,12 @@
 # Author J.Yellen                   #
 #####################################
 """
-from typing import Iterable, Iterator
 from functools import partial
 from itertools import islice
 import numpy as np
 from .matrix_handler import BinaryAcceptance
 from .result import Results
+from typing import Iterable, Iterator, Optional
 
 
 class HDFS(Results):
@@ -71,7 +71,7 @@ class HDFS(Results):
             return list(islice(iterable, n))
         return iter(partial(take, n, iter(iterable)), [])
 
-    def find_paths(self, runs: int = None, verbose=False) -> None:
+    def find_paths(self, runs: Optional[int] = None, verbose: bool = False) -> None:
         """
         Evaluate the available paths/subsets
         runs : number of initial nodes starting from 0
@@ -168,7 +168,7 @@ class WHDFS(Results):
                 good_nodes.pop()
                 visited.popitem()
 
-    def find_paths(self, runs: int = None, verbose: bool = False) -> None:
+    def find_paths(self, runs: Optional[int] = None, verbose: bool = False) -> None:
         """
         Evaluate the available paths/subsets
         runs : number of initial nodes starting from 0
