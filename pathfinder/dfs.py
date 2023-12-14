@@ -4,17 +4,18 @@
 # Author J.Yellen                   #
 #####################################
 """
-from typing import Iterable, Iterator
 from functools import partial
 from itertools import islice
 import numpy as np
-
 from .matrix_handler import BinaryAcceptance
 from .result import Results
+from typing import Iterable, Iterator, Optional
+
 
 class HDFS(Results):
 
-    def __init__(self, binary_acceptance_obj:BinaryAcceptance, top:int=10, ignore_subset:bool=True)-> None:
+    def __init__(self, binary_acceptance_obj: BinaryAcceptance, top: int = 10,
+                 ignore_subset: bool = True) -> None:
         """
         Hereditary Depth First Search
         """
@@ -22,7 +23,7 @@ class HDFS(Results):
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
 
-    def hdfs(self, trim:bool=True) -> Iterator:
+    def hdfs(self, trim: bool = True) -> Iterator:
         """
         Hereditary Depth First Search
         Returns all paths under the Hereditary condition.
@@ -64,16 +65,16 @@ class HDFS(Results):
                 visited.popitem()
 
     @staticmethod
-    def chunked(iterable:Iterable, n:int) -> Iterator:
-        """Break *iterable* into lists of length *n*:"""
+    def chunked(iterable: Iterable, n: int) -> Iterator:
+        """Break *iterable* into lists of length *n*: """
         def take(n, iterable):
             return list(islice(iterable, n))
         return iter(partial(take, n, iter(iterable)), [])
 
-    def find_paths(self, runs:int=None, verbose=False) -> None:
+    def find_paths(self, runs: Optional[int] = None, verbose: bool = False) -> None:
         """
         Evaluate the available paths/subsets
-        runs: number of initial nodes starting from 0
+        runs : number of initial nodes starting from 0
         """
         self.bam.reset_source()
         if len(self.res) > 1:
@@ -93,9 +94,10 @@ class HDFS(Results):
         if verbose:
             print(self)
 
+
 class WHDFS(Results):
 
-    def __init__(self, binary_acceptance_obj:BinaryAcceptance, top:int=10, ignore_subset:bool=True) -> None:
+    def __init__(self, binary_acceptance_obj: BinaryAcceptance, top: int = 10, ignore_subset: bool = True) -> None:
         """
         Weighted Hereditary Depth First Search
         """
@@ -166,10 +168,10 @@ class WHDFS(Results):
                 good_nodes.pop()
                 visited.popitem()
 
-    def find_paths(self, runs:int=None, verbose:bool=False) -> None:
+    def find_paths(self, runs: Optional[int] = None, verbose: bool = False) -> None:
         """
         Evaluate the available paths/subsets
-        runs: number of initial nodes starting from 0
+        runs : number of initial nodes starting from 0
         """
         self.bam.reset_source()
         if len(self.res) > 1:
@@ -180,7 +182,7 @@ class WHDFS(Results):
         for i in range(0, runs):
             self.whdfs()
             if i < self.bam.dim-1:
-                self.bam.reset_source(i+1)
+                self.bam.reset_source(i + 1)
         self.bam.reset_source()
         if verbose:
             print(self)

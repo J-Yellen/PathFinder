@@ -6,6 +6,13 @@
 #####################################
 """
 import numpy as np
+from numpy.typing import NDArray
+from typing import Optional, Union, Annotated, TypeVar, Literal
+
+ScalarType_co = TypeVar("ScalarType_co", bound=np.generic, contravariant=True)
+Array2D_Float = Annotated[np.ndarray[ScalarType_co, float], Literal['N', 'N']]
+Array2D_Bool = Annotated[np.ndarray[ScalarType_co, bool], Literal['N', 'N']]
+
 
 class Graph():
 
@@ -13,28 +20,28 @@ class Graph():
         self._adj = {}
         self._node = {}
 
-    def __construct_nodes(self, edge:list) -> None:
+    def __construct_nodes(self, edge: list) -> None:
         for item in edge:
             if item[0] not in self._node:
                 self._node[item[0]] = {}
                 self._adj[item[0]] = {}
 
-    def __construct_adj(self, edge:list) -> None:
+    def __construct_adj(self, edge: list) -> None:
         self.__construct_nodes(edge)
         for item in edge:
-            source, child , weight = item
+            source, child, weight = item
             if child not in self._adj[source]:
                 self._adj[source][child] = {}
             index = len(self._adj[source][child])
             self._adj[source][child] = {index: {'weight': weight}}
 
-    def add_weighted_edges(self, edges:list, clear:bool=False) -> None:
+    def add_weighted_edges(self, edges: list, clear: bool = False) -> None:
         if clear:
-            self._adj= {}
+            self._adj = {}
             self._node = {}
         self.__construct_adj(edges)
 
-    def edges(self, srce:int=None)-> list:
+    def edges(self, srce: int = None) -> list:
         if isinstance(srce, list):
             srce = srce[0]
         if srce is None:
@@ -43,11 +50,11 @@ class Graph():
             return [(srce, i) for i in self._adj[srce]]
         return []
 
+
 class BinaryAcceptance(Graph):
 
-    def __init__ (self, matrix:np.ndarray[bool, float],
-                  weights:list|None = None,
-                  threshold:float|None = None) -> None:
+    def __init__(self, matrix: Union[Array2D_Bool, Array2D_Float],  weights: Optional[list] = None,
+                 threshold: Optional[float] = None) -> None:
         super().__init__()
         self.source = 0
         self.bin_acc = self.set_binary_acceptance(matrix, threshold)
@@ -60,7 +67,8 @@ class BinaryAcceptance(Graph):
 
     # setter method
     @staticmethod
-    def set_binary_acceptance(matrix:np.ndarray, threshold:float|None=None)-> np.ndarray:
+    def set_binary_acceptance(matrix: Union[Array2D_Bool, Array2D_Float],
+                              threshold: Optional[float] = None) -> Array2D_Bool:
         if matrix.ndim != 2:
             raise ValueError('Binary acceptance is not a 2d array')
 
@@ -81,7 +89,7 @@ is array of integers, converting format to True/False')
 
     # setter method
     @staticmethod
-    def set_weights(weights:list|None, size:int)-> np.ndarray:
+    def set_weights(weights: Optional[list], size: int) -> NDArray:
         if weights is None:
             weights = [1] * size
         else:
@@ -91,7 +99,7 @@ is array of integers, converting format to True/False')
         return np.array(weights)
 
     @staticmethod
-    def set_dummy_target(bin_acc:np.ndarray, source:int)-> np.ndarray:
+    def set_dummy_target(bin_acc: Array2D_Bool, source: int) -> Array2D_Bool:
         """
         Set up the binary acceptence matrix setting the
         source diagonal element to True.
@@ -107,7 +115,7 @@ is array of integers, converting format to True/False')
         return bin_acc_plus
 
     @staticmethod
-    def strip_subdict(dct:dict, target:str)->list:
+    def strip_subdict(dct: dict, target: str) -> list:
         return [p[target] for _, p in dct.items()]
 
     def get_full_triu(self) -> np.ndarray:
@@ -121,16 +129,16 @@ is array of integers, converting format to True/False')
         """
         add weights to the node edges
         """
-        edges= [(*ij, self.weights[ij[1]]) for ij in np.argwhere(self.get_full_triu())]
+        edges = [(*ij, self.weights[ij[1]]) for ij in np.argwhere(self.get_full_triu())]
         self.add_weighted_edges(edges, clear=True)
 
-    def get_weight(self, path:list) -> float:
+    def get_weight(self, path: list) -> float:
         """ Get the sum of the weights for a given path of indices"""
         if path:
             return np.sum(self.weights[path])
         return 0.0
 
-    def get_abs_weight_lim(self, path:list) -> float:
+    def get_abs_weight_lim(self, path: list) -> float:
         """ Get the sum of the weights for a given path of indices"""
 
         if path:
@@ -138,7 +146,7 @@ is array of integers, converting format to True/False')
             return np.sum(np.abs(wghts))
         return 0.0
 
-    def reset_source(self, source:int=0)-> None:
+    def reset_source(self, source: int = 0) -> None:
         """
         reset the source node
         """
@@ -148,7 +156,7 @@ is array of integers, converting format to True/False')
         self.source = source
         self.set_weighted_graph()
 
-    def sort_bam_by_weight(self) -> np.ndarray:
+    def sort_bam_by_weight(self) -> Array2D_Bool:
         index_map = np.argsort(self.weights[:-1:])[::-1]
         self.weights = np.sort(self.weights)[::-1]
         self.bin_acc = self.bin_acc[index_map, :][:, index_map]
