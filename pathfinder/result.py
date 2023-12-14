@@ -5,7 +5,6 @@
 #####################################
 """
 from dataclasses import dataclass, field
-from typing import List
 
 
 @dataclass(order=True)
@@ -29,7 +28,7 @@ class Results():
     """
     Results class to handle lists of Result (path, weight) objects
     """
-    def __init__(self, paths: List[set], weights: List[float], top: int = 1, ignore_subset: bool = False):
+    def __init__(self, paths: list[set], weights: list[float], top: int = 1, ignore_subset: bool = False):
         if len(paths) != len(weights):
             raise ValueError("Unequal length lists provided!")
         self.ignore_subset = ignore_subset
@@ -37,7 +36,7 @@ class Results():
         self._top = top
 
     # setter
-    def _set_res(self, pths: List[set], wghts: List[float], sort: bool = True) -> List[Result]:
+    def _set_res(self, pths: list[set], wghts: list[float], sort: bool = True) -> list[Result]:
         all_res = [Result(path=set(p), weight=w) for p, w in zip(pths, wghts)]
         if self.ignore_subset:
             res = [item for item in all_res if not any(item.path < pth.path for pth in all_res)]
@@ -56,19 +55,19 @@ class Results():
         self._top = top
 
     @property
-    def res(self) -> List[Result]:
+    def res(self) -> list[Result]:
         return self._res[:self._top]
 
     @property
-    def get_weights(self) -> List[float]:
+    def get_weights(self) -> list[float]:
         return [item.weight for item in self.res]
 
     @property
-    def get_paths(self) -> List[list]:
+    def get_paths(self) -> list[list]:
         return [sorted(item.path) for item in self.res]
 
     @property
-    def get_raw_paths(self) -> List[list]:
+    def get_raw_paths(self) -> list[list]:
         return [item.path for item in self.res]
 
     @property
@@ -87,7 +86,7 @@ class Results():
                 hi_ = mid
         return lo_
 
-    def res_sort(self, trim: bool = True) -> List[Result]:
+    def res_sort(self, trim: bool = True) -> list[Result]:
         if trim:
             self._res = sorted(self._res, reverse=True)[:self._top]
         self._res = sorted(self._res, reverse=True)
