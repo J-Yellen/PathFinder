@@ -6,6 +6,12 @@
 #####################################
 """
 import numpy as np
+from numpy.typing import NDArray
+from typing import Optional, Union, Annotated, TypeVar, Literal
+
+ScalarType_co = TypeVar("ScalarType_co", bound=np.generic, contravariant=True)
+Array2D_Float = Annotated[np.ndarray[ScalarType_co, float], Literal['N', 'N']]
+Array2D_Bool = Annotated[np.ndarray[ScalarType_co, bool], Literal['N', 'N']]
 
 
 class Graph():
@@ -47,8 +53,8 @@ class Graph():
 
 class BinaryAcceptance(Graph):
 
-    def __init__(self, matrix: np.ndarray[bool, float],  weights: list | None = None,
-                 threshold: float | None = None) -> None:
+    def __init__(self, matrix: Union[Array2D_Bool, Array2D_Float],  weights: Optional[list] = None,
+                 threshold: Optional[float] = None) -> None:
         super().__init__()
         self.source = 0
         self.bin_acc = self.set_binary_acceptance(matrix, threshold)
@@ -61,7 +67,8 @@ class BinaryAcceptance(Graph):
 
     # setter method
     @staticmethod
-    def set_binary_acceptance(matrix: np.ndarray, threshold: float | None = None) -> np.ndarray:
+    def set_binary_acceptance(matrix: Union[Array2D_Bool, Array2D_Float],
+                              threshold: Optional[float] = None) -> Array2D_Bool:
         if matrix.ndim != 2:
             raise ValueError('Binary acceptance is not a 2d array')
 
@@ -82,7 +89,7 @@ is array of integers, converting format to True/False')
 
     # setter method
     @staticmethod
-    def set_weights(weights: list | None, size: int) -> np.ndarray:
+    def set_weights(weights: Optional[list], size: int) -> NDArray:
         if weights is None:
             weights = [1] * size
         else:
@@ -92,7 +99,7 @@ is array of integers, converting format to True/False')
         return np.array(weights)
 
     @staticmethod
-    def set_dummy_target(bin_acc: np.ndarray, source: int) -> np.ndarray:
+    def set_dummy_target(bin_acc: Array2D_Bool, source: int) -> Array2D_Bool:
         """
         Set up the binary acceptence matrix setting the
         source diagonal element to True.
@@ -149,7 +156,7 @@ is array of integers, converting format to True/False')
         self.source = source
         self.set_weighted_graph()
 
-    def sort_bam_by_weight(self) -> np.ndarray:
+    def sort_bam_by_weight(self) -> Array2D_Bool:
         index_map = np.argsort(self.weights[:-1:])[::-1]
         self.weights = np.sort(self.weights)[::-1]
         self.bin_acc = self.bin_acc[index_map, :][:, index_map]
