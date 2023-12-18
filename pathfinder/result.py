@@ -111,7 +111,7 @@ class Results():
                 for pth, wgt in zip(paths, weight):
                     self.add_res(pth, wgt)
             else:
-                self._res += self.__set_res(paths, weight, sort=True)
+                self._res += self._set_res(paths, weight, sort=True)
                 self.res_sort(trim=True)
 
     def remap_path(self, index_map: list) -> list[Result]:
