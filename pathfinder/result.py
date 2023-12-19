@@ -5,6 +5,7 @@
 #####################################
 """
 from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass(order=True)
@@ -36,8 +37,19 @@ class Results():
         self._top = top
 
     # setter
-    def _set_res(self, pths: list[set], wghts: list[float], sort: bool = True) -> list[Result]:
-        all_res = [Result(path=set(p), weight=w) for p, w in zip(pths, wghts)]
+    def _set_res(self, paths: list[set], weights: list[float], sort: bool = True) -> list[Result]:
+        """
+        Takes lists of paths and weights and combines to create a list of Result type objects.
+
+        Args:
+            paths (list[set]): List of unique sets containing index reference of directed acyclic graph
+            weights (list[float]): Weights corresponding to the path input
+            sort (bool, optional): Sort by path weight. Defaults to True.
+
+        Returns:
+            list[Result]: List of result objects containing result for each path input
+        """
+        all_res = [Result(path=set(p), weight=w) for p, w in zip(paths, weights)]
         if self.ignore_subset:
             res = [item for item in all_res if not any(item.path < pth.path for pth in all_res)]
         else:
@@ -75,12 +87,26 @@ class Results():
         return max(self._res)
 
     @staticmethod
-    def bisect_left(to_bisect: list, num: object, lo_: int = 0, hi_: int = None) -> int:
+    def _bisect_left(to_bisect: list[Result], new_item: Result,
+                     lo_: int = 0, hi_: Optional[int] = None) -> int:
+        """
+        Calculates the index position of new item that is to be inserted in a descending
+        list i.e. inserted to the left.
+
+        Args:
+            to_bisect (list[Result]): Original list of sortable objects
+            new_item (Result): object to be placed in original list
+            lo_ (int, optional): Lower bound from which to sort new item. Defaults to 0.
+            hi_ (int, optional): Upper bound to which to sort new item. Defaults as None == length list.
+
+        Returns:
+            int: index for insertion to left of descending values
+        """
         if hi_ is None:
             hi_ = len(to_bisect)
         while lo_ < hi_:
-            mid = (lo_ + hi_)//2
-            if to_bisect[mid] > num:
+            mid = (lo_ + hi_) // 2
+            if to_bisect[mid].weight >= new_item.weight:
                 lo_ = mid + 1
             else:
                 hi_ = mid
@@ -91,25 +117,40 @@ class Results():
             self._res = sorted(self._res, reverse=True)[:self._top]
         self._res = sorted(self._res, reverse=True)
 
-    def add_res(self, path: set, weight: float, trim_to_top: bool = True, bisect=True) -> None:
+    def add_result(self, path: set, weight: float, trim_to_top: bool = True, bisect=True) -> None:
+        """
+        Add new result to list of results in Path, weight format
+
+        Args:
+            path (set): Sets containing index reference of directed acyclic graph
+            weight (float): Weights corresponding to the path input
+            trim_to_top (bool, optional): Restrict list of results to default length. Defaults to True.
+            bisect (bool, optional): Insert new result into sorted Results position. Defaults to True.
+        """
         res_ = Result(path=set(path), weight=weight)
         if self.ignore_subset:
             if any(res_.path < pth for pth in self.get_raw_paths):
                 return
         if res_ not in self._res:
             if bisect:
-                idx = self.bisect_left(self._res, res_)
+                idx = self._bisect_left(self._res, res_)
                 self._res.insert(idx, res_)
             else:
                 self._res.append(res_)
         if trim_to_top:
             self._res = self.res
 
-    def bulk_add(self, paths: list[set], weight: list[float]) -> None:
+    def bulk_add_result(self, paths: list[set], weight: list[float]) -> None:
+        """
+        Add new multiple new results to list of results as lists of paths and weights.
+        Args:
+            paths (list[set]): Lists of Sets containing index reference of directed acyclic graph
+            weight (list[float]): List of Weights corresponding to the path input
+        """
         if max(weight) > min(self.get_weights):
             if self.ignore_subset:
                 for pth, wgt in zip(paths, weight):
-                    self.add_res(pth, wgt)
+                    self.add_result(pth, wgt)
             else:
                 self._res += self._set_res(paths, weight, sort=True)
                 self.res_sort(trim=True)

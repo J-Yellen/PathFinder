@@ -30,14 +30,47 @@ def test_results_class():
     assert results.top == 20
 
 
-def test_results_add_res():
+def test_bisect_left():
+
+    paths = [{i} for i in range(10)]
+    weights = [float(i) for i in range(10)]
+    results = Results(paths, weights, top=10)
+    print(results._res)
+    new_item1 = Result({5.5}, 5.5)
+    new_item2 = Result({5.1}, 5)
+    new_item3 = Result({10}, 10.0)
+    idx1 = results._bisect_left(results._res, new_item1)
+    idx2 = results._bisect_left(results._res, new_item2)
+    idx3 = results._bisect_left(results._res, new_item3)
+    assert idx1 == 4
+    assert idx2 == 5
+    assert idx3 == 0
+
+
+def test_add_result():
+    paths = [{i} for i in range(10)]
+    weights = [float(i) for i in range(10)]
+    results = Results(paths, weights, top=10)
+    results.add_result({5.1}, 5.0, trim_to_top=True, bisect=True)
+    results.add_result({10}, 10, trim_to_top=True, bisect=True)
+    assert results.res[6] == Result({5.1}, 5.0)
+    assert results.res[0] == Result({10}, 10)
+
+
+def test_bulk_add_res():
     paths = [sim_path(max_value=20) for _ in range(100)]
     weights = [sum(p) for p in paths]
+    paths2 = [sim_path(max_value=20) for _ in range(100)] + [{0, 1000}]
+    weights2 = [sum(p) for p in paths] + [1000]
     results = Results(paths, weights, top=10)
-    results.add_res({1, 2, 3, 4}, 1000)
-    assert results.best.weight == 1000
+    results.bulk_add_result(paths2, weights2)
+    assert len(results.res) == 10
+    assert results.best == Result({0, 1000}, 1000)
 
 
 if __name__ == '__main__':
-    test_results_class()
-    test_results_add_res()
+    # test_results_class()
+    # test_results_add_res()
+    # test_bisect_left()
+    # test_add_result()
+    test_bulk_add_res()
