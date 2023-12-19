@@ -63,8 +63,4 @@ def test_graph():
 
 
 if __name__ == '__main__':
-    # test_binaryacceptance()
-    # test_threshold()
-    # test_graph()
-    # test_getters()
     test_reset_source()
