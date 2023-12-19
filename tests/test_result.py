@@ -13,7 +13,7 @@ def test_result_class():
     path = sim_path(max_value=10)
     weight = 4.0
     res1 = Result(path=path, weight=weight)
-    res2 = Result(path=path, weight=weight-1)
+    res2 = Result(path=path, weight=weight - 1)
     assert max([res1, res2]).weight == weight
     assert min([res1, res2]).weight == weight - 1
 
@@ -68,9 +68,17 @@ def test_bulk_add_res():
     assert results.best == Result({0, 1000}, 1000)
 
 
+def test_remap_path():
+
+    paths = [{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, {1, 5, 9}]
+    results = Results(paths, [1, 1], top=2)
+    map1 = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+    map2 = dict(enumerate(map1))
+    map_result1 = results.remap_path(map1)
+    map_result2 = results.remap_path(map2)
+    assert map_result1 == map_result2
+    assert map_result1[1]['Path'] == [map1[i] for i in paths[1]]
+
+
 if __name__ == '__main__':
-    # test_results_class()
-    # test_results_add_res()
-    # test_bisect_left()
-    # test_add_result()
-    test_bulk_add_res()
+    test_remap_path()

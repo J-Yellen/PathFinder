@@ -5,7 +5,7 @@
 #####################################
 """
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Union
 
 
 @dataclass(order=True)
@@ -155,12 +155,30 @@ class Results():
                 self._res += self._set_res(paths, weight, sort=True)
                 self.res_sort(trim=True)
 
-    def remap_path(self, index_map: list) -> list[Result]:
-        ret = []
+    def remap_path(self, index_map: Union[dict, list]) -> list[dict[list, float]]:
+        """
+        Convert result path index using ether a dictionary or list of mapped indices.
+
+        Args:
+            index_map (Union[dict, list]): Iterable Dictionary or list containing new index
+            values as ether:
+            - List[ Current_Index ] = New_Index
+
+            or
+            - Dict[ Current_Index ] = New_Index
+
+        Returns:
+            list[dict[list, float]]:  List of results in dictionary format
+            that preserved the new path map order
+        """
+
+        list_of_dicts = []
         for item in self.res:
-            map_path = set([index_map[i] for i in item.path])
-            ret.append(Result(path=map_path, weight=item.weight))
-        return ret
+            new_result = {'Path': [index_map[i] for i in sorted(item.path)],
+                          'Weight': item.weight
+                          }
+            list_of_dicts.append(new_result)
+        return list_of_dicts
 
     def __str__(self):
         return ",\n".join([f"{i+1}: {item}" for i, item in enumerate(self.res)])
