@@ -11,7 +11,7 @@ def pseudo_data(N=25, p=0.05, seed=1) -> np.ndarray:
 
 
 def pseudo_weights(N=25, sort=True, seed=1) -> np.ndarray:
-    np.random.seed(seed)   
+    np.random.seed(seed)
     if sort:
         return np.sort(np.random.rand(N))[::-1]
     else:
