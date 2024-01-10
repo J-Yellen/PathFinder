@@ -42,8 +42,8 @@ def set_legend(ax: plt.Axes) -> None:
 
 def add_cell_borders(ax: plt.Axes, dim: int) -> None:
     for i in range(0, dim):
-        ax.axhline(y=i+0.5, xmin=0, xmax=(i+2)/dim, linewidth=2, color="k")
-        ax.axvline(x=i+0.5, ymin=0, ymax=(dim-i)/dim, linewidth=2, color="k")
+        ax.axhline(y=i + 0.5, xmin=0, xmax=(i + 2) / dim, linewidth=2, color="k")
+        ax.axvline(x=i + 0.5, ymin=0, ymax=(dim - i) / dim, linewidth=2, color="k")
 
 
 def format_path(path: list) -> np.ndarray:
@@ -59,7 +59,7 @@ def format_path(path: list) -> np.ndarray:
 
 def make_path0(paths: list, shift: bool = True) -> dict:
 
-    shift_i = 1./(len(paths)+1)
+    shift_i = 1. / (len(paths) + 1)
     lshft = 0.5
     c_vals = np.linspace(0.0, 1, len(paths))
     color = cm.rainbow(c_vals)
@@ -68,13 +68,13 @@ def make_path0(paths: list, shift: bool = True) -> dict:
         ret[i] = {}
         posx, posy, colors = [], [], []
         if shift:
-            lshft = (i+1)*shift_i
+            lshft = (i + 1) * shift_i
         pth = format_path(p)
         for j, k in zip(pth[0], pth[1]):
             xy = np.array([j, k])
-            loc = abs(c_vals - (1-i/len(paths))).argmin()
-            posx += [list(xy[0]+lshft-0.5)]
-            posy += [list(xy[1]+lshft-0.5)]
+            loc = abs(c_vals - (1 - i / len(paths))).argmin()
+            posx += [list(xy[0] + lshft - 0.5)]
+            posy += [list(xy[1] + lshft - 0.5)]
             colors += [color[loc]]
         ret[i]['x'] = posx
         ret[i]['y'] = posy
@@ -94,7 +94,7 @@ def plot(bam: BinaryAcceptance, result: Optional[Results] = None, top: Optional[
     dat = np.array(bam.bin_acc, dtype=float, copy=True)
     dat[np.diag_indices(dat.shape[0])] = 0.3
     dat[np.triu_indices(dat.shape[0], k=1)] = 0.6
-    _, axis = plt.subplots(figsize=(16, 16/1.5))
+    _, axis = plt.subplots(figsize=(16, 16 / 1.5))
     axis.imshow(dat, cmap=cmap)
     axis.set_xticks([])
     axis.set_yticks([])

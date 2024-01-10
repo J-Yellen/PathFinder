@@ -6,11 +6,12 @@
 #####################################
 """
 import numpy as np
-from numpy.typing import NDArray
 from typing import Optional, Union, Annotated, TypeVar, Literal
 
 ScalarType_co = TypeVar("ScalarType_co", bound=np.generic, contravariant=True)
-Array2D_Float = Annotated[np.ndarray[ScalarType_co, float], Literal['N', 'N']]
+Array1D_Float = Annotated[np.ndarray[ScalarType_co, np.float_], Literal['N']]
+Array1D_int = Annotated[np.ndarray[ScalarType_co, np.int_], Literal['N']]
+Array2D_Float = Annotated[np.ndarray[ScalarType_co, np.float_], Literal['N', 'N']]
 Array2D_Bool = Annotated[np.ndarray[ScalarType_co, bool], Literal['N', 'N']]
 
 
@@ -53,7 +54,7 @@ class Graph():
 
 class BinaryAcceptance(Graph):
 
-    def __init__(self, matrix: Union[Array2D_Bool, Array2D_Float],  weights: Optional[list] = None,
+    def __init__(self, matrix: Union[Array2D_Bool, Array2D_Float], weights: Optional[list] = None,
                  threshold: Optional[float] = None) -> None:
         super().__init__()
         self.source = 0
@@ -78,18 +79,17 @@ class BinaryAcceptance(Graph):
         if matrix.dtype == bool:
             return matrix
         elif matrix.dtype == 'int' and threshold is None:
-            print(f'{10*"#"} Warning! {10*"#"} \n\n Binary acceptance \
+            print(f'{10*"#"} Warning! {10*"#"}\nBinary acceptance \
 is array of integers, converting format to True/False')
             return np.array(abs(matrix), dtype=bool)
         elif threshold is not None:
             return abs(matrix) < threshold
         else:
-            raise ValueError('Binary acceptance is not Boolean type!, \
-\n Convert or provide threshold')
+            raise ValueError('Binary acceptance is not Boolean type!, Convert or provide threshold')
 
     # setter method
     @staticmethod
-    def set_weights(weights: Optional[list], size: int) -> NDArray:
+    def set_weights(weights: Optional[list], size: int) -> Array1D_Float:
         if weights is None:
             weights = [1] * size
         else:
@@ -105,7 +105,7 @@ is array of integers, converting format to True/False')
         source diagonal element to True.
         """
         dim = np.array(bin_acc.shape)
-        bin_acc_plus = np.ones(dim+1, dtype=bool)
+        bin_acc_plus = np.ones(dim + 1, dtype=bool)
         bin_acc_plus[:-1:, :-1:] = bin_acc
         bin_acc_plus[source, source] = True
         # These lines make things fast!
@@ -114,9 +114,9 @@ is array of integers, converting format to True/False')
         bin_acc_plus[sub, :] = False
         return bin_acc_plus
 
-    @staticmethod
-    def strip_subdict(dct: dict, target: str) -> list:
-        return [p[target] for _, p in dct.items()]
+    # @staticmethod
+    # def strip_subdict(dct: dict, target: str) -> list:
+    #     return [p[target] for _, p in dct.items()]
 
     def get_full_triu(self) -> np.ndarray:
         """
@@ -151,12 +151,12 @@ is array of integers, converting format to True/False')
         reset the source node
         """
         if source >= self.dim:
-            print('Source out of range Defaulting to zero')
+            print('Source out of range. Defaulting to zero')
             source = 0
         self.source = source
         self.set_weighted_graph()
 
-    def sort_bam_by_weight(self) -> Array2D_Bool:
+    def sort_bam_by_weight(self) -> Array1D_int:
         index_map = np.argsort(self.weights[:-1:])[::-1]
         self.weights = np.sort(self.weights)[::-1]
         self.bin_acc = self.bin_acc[index_map, :][:, index_map]

@@ -17,7 +17,11 @@ class HDFS(Results):
     def __init__(self, binary_acceptance_obj: BinaryAcceptance, top: int = 10,
                  ignore_subset: bool = True) -> None:
         """
-        Hereditary Depth First Search
+            Hereditary Depth First Search Class
+        Args:
+            binary_acceptance_obj (BinaryAcceptance): BinaryAcceptance Object containing 
+            top (int, optional): _description_. Defaults to 10.
+            ignore_subset (bool, optional): _description_. Defaults to True.
         """
         super().__init__(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
         self.bam = binary_acceptance_obj
@@ -86,10 +90,10 @@ class HDFS(Results):
             for item in self.chunked(self.hdfs(), 500):
                 paths = list(item)
                 weights = [self.weight_func(p) for p in paths if p]
-                self.bulk_add(paths, weights)
+                self.bulk_add_result(paths, weights)
                 self
-            if i < self.bam.dim-1:
-                self.bam.reset_source(i+1)
+            if i < self.bam.dim - 1:
+                self.bam.reset_source(i + 1)
         self.bam.reset_source()
         if verbose:
             print(self)
@@ -151,7 +155,7 @@ class WHDFS(Results):
                 if child == target:
                     if currnt_wgt > max_wgt.min():
                         # update result
-                        self.add_res(pth[:-1:], currnt_wgt)
+                        self.add_result(pth[:-1:], currnt_wgt)
                         max_wgt = np.array(self.get_weights)
                 # is the remaining weight enough to continue "down this route"
                 if (currnt_wgt + remain_wgt) > max_wgt.min():
@@ -181,7 +185,7 @@ class WHDFS(Results):
 
         for i in range(0, runs):
             self.whdfs()
-            if i < self.bam.dim-1:
+            if i < self.bam.dim - 1:
                 self.bam.reset_source(i + 1)
         self.bam.reset_source()
         if verbose:
