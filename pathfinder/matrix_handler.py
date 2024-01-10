@@ -6,11 +6,12 @@
 #####################################
 """
 import numpy as np
-from numpy.typing import NDArray
 from typing import Optional, Union, Annotated, TypeVar, Literal
 
 ScalarType_co = TypeVar("ScalarType_co", bound=np.generic, contravariant=True)
-Array2D_Float = Annotated[np.ndarray[ScalarType_co, float], Literal['N', 'N']]
+Array1D_Float = Annotated[np.ndarray[ScalarType_co, np.float_], Literal['N']]
+Array1D_int = Annotated[np.ndarray[ScalarType_co, np.int_], Literal['N']]
+Array2D_Float = Annotated[np.ndarray[ScalarType_co, np.float_], Literal['N', 'N']]
 Array2D_Bool = Annotated[np.ndarray[ScalarType_co, bool], Literal['N', 'N']]
 
 
@@ -88,7 +89,7 @@ is array of integers, converting format to True/False')
 
     # setter method
     @staticmethod
-    def set_weights(weights: Optional[list], size: int) -> NDArray:
+    def set_weights(weights: Optional[list], size: int) -> Array1D_Float:
         if weights is None:
             weights = [1] * size
         else:
@@ -155,7 +156,7 @@ is array of integers, converting format to True/False')
         self.source = source
         self.set_weighted_graph()
 
-    def sort_bam_by_weight(self) -> Array2D_Bool:
+    def sort_bam_by_weight(self) -> Array1D_int:
         index_map = np.argsort(self.weights[:-1:])[::-1]
         self.weights = np.sort(self.weights)[::-1]
         self.bin_acc = self.bin_acc[index_map, :][:, index_map]
