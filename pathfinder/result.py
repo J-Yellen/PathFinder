@@ -174,7 +174,7 @@ class Results():
 
         list_of_dicts = []
         for item in self.res:
-            new_result = {'Path': [index_map[i] for i in sorted(item.path)],
+            new_result = {'Path': {index_map[i] for i in sorted(item.path)},
                           'Weight': item.weight
                           }
             list_of_dicts.append(new_result)
