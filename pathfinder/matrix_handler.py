@@ -114,10 +114,6 @@ is array of integers, converting format to True/False')
         bin_acc_plus[sub, :] = False
         return bin_acc_plus
 
-    # @staticmethod
-    # def strip_subdict(dct: dict, target: str) -> list:
-    #     return [p[target] for _, p in dct.items()]
-
     def get_full_triu(self) -> np.ndarray:
         """
         upper tri of binary acceptance with dummy target
@@ -158,6 +154,6 @@ is array of integers, converting format to True/False')
 
     def sort_bam_by_weight(self) -> Array1D_int:
         index_map = np.argsort(self.weights[:-1:])[::-1]
-        self.weights = np.sort(self.weights)[::-1]
+        self.weights[:-1:] = self.weights[index_map]
         self.bin_acc = self.bin_acc[index_map, :][:, index_map]
         return index_map
