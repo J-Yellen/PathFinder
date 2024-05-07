@@ -19,7 +19,7 @@ class HDFS(Results):
         """
             Hereditary Depth First Search Class
         Args:
-            binary_acceptance_obj (BinaryAcceptance): BinaryAcceptance Object containing 
+            binary_acceptance_obj (BinaryAcceptance): BinaryAcceptance Object containing
             top (int, optional): _description_. Defaults to 10.
             ignore_subset (bool, optional): _description_. Defaults to True.
         """
@@ -105,7 +105,7 @@ class WHDFS(Results):
         """
         Weighted Hereditary Depth First Search
         """
-        super().__init__(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
+        super().__init__(paths=[{}], weights=[-np.inf], top=top, ignore_subset=ignore_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
         self.wlimit_func = self.bam.get_weight
