@@ -88,13 +88,14 @@ def add_results(ax: plt.Axes, res: Results, lim: int) -> None:
             ax.plot(x, y, lw=3, color=c, linestyle='-')
 
 
-def plot(bam: BinaryAcceptance, result: Optional[Results] = None, top: Optional[int] = None) -> plt.Axes:
+def plot(bam: BinaryAcceptance, result: Optional[Results] = None, top: Optional[int] = None,
+         size: int = 16) -> plt.Axes:
 
     cmap = ListedColormap(['k', 'darkgrey', 'lightgrey', 'w'], name='bwg')
     dat = np.array(bam.bin_acc, dtype=float, copy=True)
     dat[np.diag_indices(dat.shape[0])] = 0.3
     dat[np.triu_indices(dat.shape[0], k=1)] = 0.6
-    _, axis = plt.subplots(figsize=(16, 16 / 1.5))
+    _, axis = plt.subplots(figsize=(size, size / 1.5))
     axis.imshow(dat, cmap=cmap)
     axis.set_xticks([])
     axis.set_yticks([])
