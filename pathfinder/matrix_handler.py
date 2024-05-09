@@ -58,11 +58,11 @@ class BinaryAcceptance(Graph):
                  threshold: Optional[float] = None, allow_negative_weights: bool = False) -> None:
         super().__init__()
 
-        if not allow_negative_weights and min(weights) < 0.0:
-            raise Exception('Negative weights provided, adjust weights or provide allow_negative_weights = True')
         self.source = 0
         self.bin_acc = self.set_binary_acceptance(matrix, threshold)
         self.weights = self.set_weights(weights, self.dim)
+        if not allow_negative_weights and min(self.weights) < 0.0:
+            raise Exception('WARNING! Negative weights provided. Rescale or set allow_negative_weights = True')
         self.set_weighted_graph()
 
     @property
