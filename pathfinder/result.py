@@ -140,6 +140,9 @@ class Results():
         if trim_to_top:
             self._res = self.res
 
+    def add_results_from_results(self, result: 'Results') -> None:
+        self.bulk_add_result(result.get_paths, result.get_weights)
+
     def bulk_add_result(self, paths: list[set], weight: list[float]) -> None:
         """
         Add new multiple new results to list of results as lists of paths and weights.

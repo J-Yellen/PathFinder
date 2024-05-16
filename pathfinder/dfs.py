@@ -9,7 +9,7 @@ from itertools import islice
 import numpy as np
 from .matrix_handler import BinaryAcceptance
 from .result import Results
-from typing import Iterable, Iterator, Optional
+from typing import Iterable, Iterator, Optional, Tuple
 
 
 class HDFS(Results):
@@ -27,16 +27,18 @@ class HDFS(Results):
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
 
-    def hdfs(self, trim: bool = True, ignore: Optional[int] = None) -> Iterator:
+    def hdfs(self, trim: bool = True, ignore_child: Optional[list] = None) -> Iterator:
         """
         Hereditary Depth First Search
         Returns all paths under the Hereditary condition.
         """
+        if ignore_child is None:
+            ignore_child = []
         target = self.bam.dim
         cutoff = self.bam.dim + 1
         visited = dict.fromkeys([self.bam.source])
-        stack = [(v for _, v in self.bam.edges(self.bam.source) if v != ignore)]
-        good_nodes = [set(v for _, v in self.bam.edges(self.bam.source) if v != ignore)]
+        stack = [(v for _, v in self.bam.edges(self.bam.source) if v not in ignore_child)]
+        good_nodes = [set(v for _, v in self.bam.edges(self.bam.source))]
         while stack:
             children = stack[-1]
             child = next(children, None)
@@ -54,7 +56,7 @@ class HDFS(Results):
                         yield list(visited) + [child]
                 visited[child] = None
                 if target not in visited:
-                    good_children = set(v for _, v in self.bam.edges(child) if v != ignore)
+                    good_children = set(v for _, v in self.bam.edges(child))
                     good_nodes += [good_children.intersection(good_nodes[-1])]
                     stack.append((v for _, v in self.bam.edges(child) if v in good_nodes[-1]))
                 else:
@@ -75,19 +77,24 @@ class HDFS(Results):
             return list(islice(iterable, n))
         return iter(partial(take, n, iter(iterable)), [])
 
-    def find_paths(self, runs: Optional[int] = None, verbose: bool = False, ignore_node: Optional[int] = None) -> None:
+    def find_paths(self, runs: Optional[int] = None, source_node: int = 0,
+                   ignore_child: Optional[Tuple[list, int]] = None, verbose: bool = False) -> None:
         """
         Evaluate the available paths/subsets
         runs : number of initial nodes starting from 0
         """
-        self.bam.reset_source()
+        if ignore_child is None:
+            ignore_child = []
+        if isinstance(ignore_child, (int, float)):
+            ignore_child = [int(ignore_child)]
+        self.bam.reset_source(source=source_node)
         if len(self.res) > 1:
             super().__init__(paths=[[]], weights=[-np.inf], top=self.top, ignore_subset=self.ignore_subset)
 
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
-        for i in range(0, runs):
-            for item in self.chunked(self.hdfs(ignore=ignore_node), 500):
+        for i in range(source_node, runs + source_node):
+            for item in self.chunked(self.hdfs(ignore_child=ignore_child), 500):
                 paths = list(item)
                 weights = [self.weight_func(p) for p in paths if p]
                 self.bulk_add_result(paths, weights)
@@ -105,25 +112,28 @@ class WHDFS(Results):
         """
         Weighted Hereditary Depth First Search
         """
-        super().__init__(paths=[{}], weights=[-np.inf], top=top, ignore_subset=ignore_subset)
+        super(WHDFS, self).__init__(paths=[{}], weights=[-np.inf], top=top, ignore_subset=ignore_subset)
+
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
         self.wlimit_func = self.bam.get_weight
-
-    def whdfs(self, ignore: Optional[int] = None) -> None:
+        
+    def whdfs(self, ignore_child: Optional[list] = None) -> None:
         """
         Weighted Hereditary Depth First Search
         Returns best path for a given source under
         the weighted Hereditary condition.
         """
+        if ignore_child is None:
+            ignore_child = []
         cutoff = self.bam.dim + 1
         target = self.bam.dim
         # initiate the visited list with the source node
         visited = dict.fromkeys([self.bam.source])
         # list of generators that builds to provide the subset of available nodes for each child with all nodes > child
-        stack = [(v for _, v in self.bam.edges(self.bam.source) if v != ignore)]
+        stack = [(v for _, v in self.bam.edges(self.bam.source) if v not in ignore_child)]
         # compleat set of available nodes for each child
-        good_nodes = [set(v for _, v in self.bam.edges(self.bam.source) if v != ignore)]
+        good_nodes = [set(v for _, v in self.bam.edges(self.bam.source))]
         # get current max weight
         max_wgt = np.array(self.get_weights)
         # iterate over nodes building and dropping from stack until empty
@@ -145,7 +155,7 @@ class WHDFS(Results):
                 # define current path bing considered
                 pth = list(visited) + [child]
                 # Intersection of nodes available to the child with those available to all previous nodes in path
-                gn = set(v for _, v in self.bam.edges(child) if v != ignore).intersection(good_nodes[-1])
+                gn = set(v for _, v in self.bam.edges(child)).intersection(good_nodes[-1])
                 # list the available nodes from the set gn
                 child_pths = np.array(list(gn))
                 # weight of current path
@@ -172,19 +182,22 @@ class WHDFS(Results):
                 good_nodes.pop()
                 visited.popitem()
 
-    def find_paths(self, runs: Optional[int] = None, verbose: bool = False, ignore_node: Optional[int] = None) -> None:
+    def find_paths(self, runs: Optional[int] = None, source_node: int = 0,
+                   ignore_child: Optional[Tuple[tuple, int]] = None, verbose: bool = False) -> None:
         """
         Evaluate the available paths/subsets
         runs : number of initial nodes starting from 0
         """
-        self.bam.reset_source()
+        self.bam.reset_source(source=source_node)
+        if isinstance(ignore_child, (int, float)):
+            ignore_child = [int(ignore_child)]
         if len(self.res) > 1:
             super().__init__(paths=[{}], weights=[-np.inf], top=self.top, ignore_subset=self.ignore_subset)
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
 
-        for i in range(0, runs):
-            self.whdfs(ignore=ignore_node)
+        for i in range(source_node, runs + source_node):
+            self.whdfs(ignore_child=ignore_child)
             if i < self.bam.dim - 1:
                 self.bam.reset_source(i + 1)
         self.bam.reset_source()

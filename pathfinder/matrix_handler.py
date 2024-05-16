@@ -11,6 +11,7 @@ from typing import Optional, Union, Annotated, TypeVar, Literal
 ScalarType_co = TypeVar("ScalarType_co", bound=np.generic, contravariant=True)
 Array1D_Float = Annotated[np.ndarray[ScalarType_co, np.float_], Literal['N']]
 Array1D_int = Annotated[np.ndarray[ScalarType_co, np.int_], Literal['N']]
+Array1D_bool = Annotated[np.ndarray[ScalarType_co, bool], Literal['N']]
 Array2D_Float = Annotated[np.ndarray[ScalarType_co, np.float_], Literal['N', 'N']]
 Array2D_Bool = Annotated[np.ndarray[ScalarType_co, bool], Literal['N', 'N']]
 
@@ -55,19 +56,29 @@ class Graph():
 class BinaryAcceptance(Graph):
 
     def __init__(self, matrix: Union[Array2D_Bool, Array2D_Float], weights: Optional[list] = None,
-                 threshold: Optional[float] = None, allow_negative_weights: bool = False) -> None:
+                 labels: Optional[list] = None, threshold: Optional[float] = None,
+                 allow_negative_weights: bool = False) -> None:
         super().__init__()
 
         self.source = 0
         self.bin_acc = self.set_binary_acceptance(matrix, threshold)
         self.weights = self.set_weights(weights, self.dim)
+        self.labels = labels
         if not allow_negative_weights and min(self.weights) < 0.0:
-            raise Exception('WARNING! Negative weights provided. Rescale or set allow_negative_weights = True')
+            raise Exception('WARNING! Negative weights provided. Rescale or set allow_negative_weights to True')
         self.set_weighted_graph()
 
     @property
     def dim(self) -> int:
         return self.bin_acc.shape[0]
+
+    @property
+    def get_source_row(self) -> Array1D_bool:
+        return self.bin_acc[self.source, :]
+
+    @property
+    def get_source_row_index(self) -> Array1D_int:
+        return np.where(self.get_source_row)[0][self.source + 1::]
 
     # setter method
     @staticmethod
@@ -151,4 +162,6 @@ is array of integers, converting format to True/False')
         index_map = np.argsort(self.weights[:-1:])[::-1]
         self.weights[:-1:] = self.weights[index_map]
         self.bin_acc = self.bin_acc[index_map, :][:, index_map]
+        if self.labels is not None:
+            self.labels = [self.labels[i] for i in index_map]
         return index_map
