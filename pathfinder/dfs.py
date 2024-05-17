@@ -9,7 +9,7 @@ from itertools import islice
 import numpy as np
 from .matrix_handler import BinaryAcceptance
 from .result import Results
-from typing import Iterable, Iterator, Optional, Tuple
+from typing import Iterable, Iterator, Optional, Tuple, Callable
 
 
 class HDFS(Results):
@@ -117,7 +117,36 @@ class WHDFS(Results):
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
         self.wlimit_func = self.bam.get_weight
-        
+        self.top_weights = self._top_weights_default
+
+    @property
+    def weight_func(self) -> Callable:
+        return self._weight_func
+
+    @weight_func.setter
+    def weight_func(self, weight_function: Callable) -> None:
+        self._weight_func = weight_function
+
+    @property
+    def wlimit_func(self) -> Callable:
+        return self._wlimit_func
+
+    @wlimit_func.setter
+    def wlimit_func(self, weight_function: Callable) -> None:
+        self._wlimit_func = weight_function
+
+    @property
+    def top_weights(self) -> Callable:
+        return self._top_weights
+
+    @top_weights.setter
+    def top_weights(self, weight_function: Callable) -> None:
+        self._top_weights = weight_function
+
+    @property
+    def _top_weights_default(self) -> np.ndarray:
+        return np.array(self.get_weights)
+
     def whdfs(self, ignore_child: Optional[list] = None) -> None:
         """
         Weighted Hereditary Depth First Search
@@ -166,7 +195,8 @@ class WHDFS(Results):
                     if currnt_wgt > max_wgt.min():
                         # update result
                         self.add_result(pth[:-1:], currnt_wgt)
-                        max_wgt = np.array(self.get_weights)
+                        # max_wgt = np.array(self.get_weights)
+                        max_wgt = self.top_weights
                 # is the remaining weight enough to continue "down this route"
                 if (currnt_wgt + remain_wgt) > max_wgt.min():
                     visited[child] = None
