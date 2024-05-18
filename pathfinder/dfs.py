@@ -222,22 +222,23 @@ class WHDFS(Results):
                 visited.popitem()
 
     def find_paths(self, runs: Optional[int] = None, source_node: int = 0,
-                   ignore_child: Optional[Tuple[tuple, int]] = None, verbose: bool = False,
+                   ignore_child: Optional[list] = None, verbose: bool = False,
                    reset_result: bool = True) -> None:
         """
         Evaluate the available paths/subsets
         runs : number of initial nodes starting from 0
         """
-        self.bam.reset_source(source=source_node)
-        if isinstance(ignore_child, (int, float)):
-            ignore_child = [int(ignore_child)]
+
         if reset_result:
             super().__init__(paths=[{}], weights=[-np.inf], top=self.top, ignore_subset=self.ignore_subset)
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
-
+        self.bam.reset_source(source=source_node)
+        if ignore_child is not None and len(ignore_child) != runs:
+            raise Exception('"ignore_child" length does not match the number of runs')
         for i in range(source_node, runs + source_node):
-            self.whdfs(ignore_child=ignore_child)
+            ignore = ignore_child[i] if ignore_child is not None else None
+            self.whdfs(ignore_child=ignore)
             if i < self.bam.dim - 1:
                 self.bam.reset_source(i + 1)
         self.bam.reset_source()
