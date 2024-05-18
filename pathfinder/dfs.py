@@ -117,10 +117,11 @@ class WHDFS(Results):
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
         self.wlimit_func = self.bam.get_weight
-        self.top_weights = self._top_weights_default
+        self.top_weight = self._top_weights_default
+        self.shared_memory = False
 
     @property
-    def weight_func(self) -> Callable:
+    def weight_func(self) -> float:
         return self._weight_func
 
     @weight_func.setter
@@ -128,24 +129,30 @@ class WHDFS(Results):
         self._weight_func = weight_function
 
     @property
-    def wlimit_func(self) -> Callable:
+    def wlimit_func(self) -> float:
         return self._wlimit_func
 
     @wlimit_func.setter
     def wlimit_func(self, weight_function: Callable) -> None:
         self._wlimit_func = weight_function
 
-    @property
-    def top_weights(self) -> Callable:
+    def top_weight(self) -> float:
         return self._top_weights
 
-    @top_weights.setter
-    def top_weights(self, weight_function: Callable) -> None:
+    def set_top_weight(self, weight_function: Callable) -> None:
         self._top_weights = weight_function
 
-    @property
-    def _top_weights_default(self) -> np.ndarray:
-        return np.array(self.get_weights)
+    def _top_weights_default(self) -> float:
+        return min(self.get_weights)
+
+    def shared_memory_update(self, value) -> None:
+        if not self.shared_memory:
+            raise AttributeError('Shared_memory_update not set, please use set_shared_memory_update.')
+        self._shared_memory_update(value)
+
+    def set_shared_memory_update(self, shared_memory_function: Callable) -> None:
+        self.shared_memory = True
+        self._shared_memory_update = shared_memory_function
 
     def whdfs(self, ignore_child: Optional[list] = None) -> None:
         """
@@ -164,7 +171,7 @@ class WHDFS(Results):
         # compleat set of available nodes for each child
         good_nodes = [set(v for _, v in self.bam.edges(self.bam.source))]
         # get current max weight
-        max_wgt = np.array(self.get_weights)
+        max_wgt = self.top_weight()
         # iterate over nodes building and dropping from stack until empty
         while stack:
             # define children as the generator from the last element of stack
@@ -192,13 +199,14 @@ class WHDFS(Results):
                 # upper limit on the weight available to the child
                 remain_wgt = self.wlimit_func(list(child_pths[(child_pths > child)]))
                 if child == target:
-                    if currnt_wgt > max_wgt.min():
+                    if currnt_wgt > max_wgt:
                         # update result
                         self.add_result(pth[:-1:], currnt_wgt)
-                        # max_wgt = np.array(self.get_weights)
-                        max_wgt = self.top_weights
+                        if self.shared_memory:
+                            self.shared_memory_update(max_wgt)
+                        max_wgt = self.top_weight()
                 # is the remaining weight enough to continue "down this route"
-                if (currnt_wgt + remain_wgt) > max_wgt.min():
+                if (currnt_wgt + remain_wgt) > max_wgt:
                     visited[child] = None
                     if target not in visited:
                         # add gn to good nodes
