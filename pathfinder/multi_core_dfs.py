@@ -28,7 +28,9 @@ def shared_memory_value(shared_object_name, num_cor, idx, value):
     existing_shm = shm.SharedMemory(name=shared_object_name)
     shared_array = np.ndarray(num_cor, dtype=np.float64, buffer=existing_shm.buf)
     shared_array[idx] = value
+    new_max = max(shared_array)
     existing_shm.close()
+    return new_max
 
 
 def get_best_weight(shared_object_name, num_cor) -> float:
@@ -46,7 +48,8 @@ def _whdfs_worker(args: Dict, return_dict: dict[int, Result], shared_object_name
                                               num_cor=args['num_cor'], idx=args['childId'])
     result.set_top_weight = partial(get_best_weight, shared_object_name=shared_object_name, num_cor=args['num_cor'])
     result.add_results_from_results(args['result'])
-    result.find_paths(runs=args['runs'], source_node=args['source'], ignore_child=args['ignore_nodes'])
+    result.find_paths(runs=args['runs'], source_node=args['source'],
+                      ignore_child=args['ignore_nodes'], reset_result=False)
 
     return_dict.update({args['childId']: result})
 
@@ -62,12 +65,10 @@ def run_multicore_hdfs(binary_acceptance_obj: BinaryAcceptance, num_cor: int = 1
     args['result'] = result
     args['num_cor'] = num_cor
     args['top'] = top
+    args['nbytes'] = np.zeros(num_cor, dtype=np.float64).nbytes
     manager = Manager()
     outputdict = manager.dict()
-    # shared_array = np.zeros(num_cor, dtype=np.float64).nbytes
-    args['nbytes'] = np.zeros(num_cor, dtype=np.float64).nbytes
     shm_object = shm.SharedMemory(name='top_results', create=True, size=args['nbytes'])
-    # shared_array_shm = np.ndarray(num_cor, dtype=np.float64, buffer=shm_object.buf)
     for source in range(0, runs):
         binary_acceptance_obj.reset_source(source=source)
         available = binary_acceptance_obj.get_source_row_index
@@ -78,16 +79,15 @@ def run_multicore_hdfs(binary_acceptance_obj: BinaryAcceptance, num_cor: int = 1
         for child, index_list in enumerate(chunked):
             args['ignore_nodes'] = [j for j in available if j not in index_list]
             jobs = []
-            for child in range(num_cor):
-                args['childId'] = child
-                p = Process(target=_whdfs_worker, args=(args, outputdict, shm_object.name))
-                jobs.append(p)
-                p.start()
-            for p in jobs:
-                p.join()
-            for _, res in outputdict.items():
-                result.add_results_from_results(res)
-            args['result'] = result
+            args['childId'] = child
+            p = Process(target=_whdfs_worker, args=(args, outputdict, shm_object.name))
+            jobs.append(p)
+            p.start()
+        for p in jobs:
+            p.join()
+        for _, res in outputdict.items():
+            result.add_results_from_results(res)
+        args['result'] = result
     shm_object.close()
     shm_object.unlink()
 

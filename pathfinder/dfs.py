@@ -203,8 +203,9 @@ class WHDFS(Results):
                         # update result
                         self.add_result(pth[:-1:], currnt_wgt)
                         if self.shared_memory:
-                            self.shared_memory_update(max_wgt)
-                        max_wgt = self.top_weight()
+                            max_wgt = self.shared_memory_update(max_wgt)
+                        else:
+                            max_wgt = self.top_weight()
                 # is the remaining weight enough to continue "down this route"
                 if (currnt_wgt + remain_wgt) > max_wgt:
                     visited[child] = None
@@ -221,7 +222,8 @@ class WHDFS(Results):
                 visited.popitem()
 
     def find_paths(self, runs: Optional[int] = None, source_node: int = 0,
-                   ignore_child: Optional[Tuple[tuple, int]] = None, verbose: bool = False) -> None:
+                   ignore_child: Optional[Tuple[tuple, int]] = None, verbose: bool = False,
+                   reset_result: bool = True) -> None:
         """
         Evaluate the available paths/subsets
         runs : number of initial nodes starting from 0
@@ -229,7 +231,7 @@ class WHDFS(Results):
         self.bam.reset_source(source=source_node)
         if isinstance(ignore_child, (int, float)):
             ignore_child = [int(ignore_child)]
-        if len(self.res) > 1:
+        if reset_result:
             super().__init__(paths=[{}], weights=[-np.inf], top=self.top, ignore_subset=self.ignore_subset)
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
