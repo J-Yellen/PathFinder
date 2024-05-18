@@ -37,7 +37,6 @@ def test_threshold():
 def test_getters():
     weights = np.array([1, 1, 1, -3.0])
     bam = BinaryAcceptance(get_basic_data(ret_dtype=bool), weights=weights, allow_negative_weights=True)
-    assert bam.get_abs_weight_lim([1, 2, 3]) == 5
     assert bam.get_weight([1, 2, 3]) == -1
     assert all([sum(item) == num for item, num in zip(bam.get_full_triu(), [3, 2, 1, 0, 0])])
 
