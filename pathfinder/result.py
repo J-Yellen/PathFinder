@@ -6,6 +6,8 @@
 """
 from dataclasses import dataclass, field
 from typing import Optional, Union
+from os import PathLike
+import json
 
 
 @dataclass(order=True)
@@ -36,7 +38,26 @@ class Results():
         self._res = self._set_res(paths, weights)
         self._top = top
 
-    # setter
+    @classmethod
+    def from_dict(self, result_dict: dict[int, dict], ignore_subset: bool = False) -> 'Results':
+        top = len(result_dict)
+        paths = [set(item.get('path')) for _, item in result_dict.items()]
+        weights = [item.get('weight') for _, item in result_dict.items()]
+        return Results(paths=paths, weights=weights, top=top, ignore_subset=ignore_subset)
+
+    @classmethod
+    def from_json(self, json_file_name: PathLike, ignore_subset: bool = False) -> 'Results':
+        with open(json_file_name, "r") as json_file:
+            result_dict = json.load(json_file)
+        return self.from_dict(result_dict, ignore_subset=ignore_subset)
+
+    def to_dict(self) -> dict:
+        return {f"{i}": {'path': list(item.path), 'weight': item.weight} for i, item in enumerate(self.res)}
+
+    def to_json(self, file_name: PathLike) -> None:
+        with open(file_name, "w") as outfile:
+            json.dump(self.to_dict(), outfile, indent=4)
+
     def _set_res(self, paths: list[set], weights: list[float], sort: bool = True) -> list[Result]:
         """
         Takes lists of paths and weights and combines to create a list of Result type objects.
@@ -71,11 +92,11 @@ class Results():
         return self._res[:self._top]
 
     @property
-    def get_weights(self) -> list[float]:
+    def get_weights(self) -> list[set]:
         return [item.weight for item in self.res]
 
     @property
-    def get_paths(self) -> list[list]:
+    def get_paths(self) -> list[set]:
         return [sorted(item.path) for item in self.res]
 
     @property
@@ -182,6 +203,14 @@ class Results():
                           }
             list_of_dicts.append(new_result)
         return list_of_dicts
+
+    def __eq__(self, other: 'Results') -> bool:
+        equal = False
+        if len(self.top) == len(other.top):
+            other_paths_in_self = all([o.path == s.path for o, s in zip(other.res, self.res)])
+            weights_match = self.get_weights == other.get_weights
+            equal = other_paths_in_self & weights_match
+        return equal
 
     def __str__(self):
         return ",\n".join([f"{i+1}: {item}" for i, item in enumerate(self.res)])
