@@ -25,15 +25,15 @@ class Graph():
     def __construct_nodes(self, edge: list) -> None:
         for item in edge:
             if item[0] not in self._node:
-                self._node[item[0]] = {}
-                self._adj[item[0]] = {}
+                self._node[int(item[0])] = {}
+                self._adj[int(item[0])] = {}
 
     def __construct_adj(self, edge: list) -> None:
         self.__construct_nodes(edge)
         for item in edge:
             source, child, weight = item
             if child not in self._adj[source]:
-                self._adj[source][child] = {}
+                self._adj[int(source)][int(child)] = {}
             index = len(self._adj[source][child])
             self._adj[source][child] = {index: {'weight': weight}}
 
