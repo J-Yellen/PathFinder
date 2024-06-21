@@ -23,7 +23,7 @@ class HDFS(Results):
             top (int, optional): _description_. Defaults to 10.
             ignore_subset (bool, optional): _description_. Defaults to True.
         """
-        super().__init__(paths=[{}], weights=[-np.inf], top=top, ignore_subset=ignore_subset)
+        super().__init__(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
 
@@ -89,7 +89,7 @@ class HDFS(Results):
             ignore_child = [int(ignore_child)]
         self.bam.reset_source(source=source_node)
         if len(self.res) > 1:
-            super().__init__(paths=[[]], weights=[-np.inf], top=self.top, ignore_subset=self.ignore_subset)
+            super().__init__(paths=[{}], weights=[0.0], top=self.top, ignore_subset=self.ignore_subset)
 
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
@@ -112,11 +112,12 @@ class WHDFS(Results):
         """
         Weighted Hereditary Depth First Search
         """
-        super(WHDFS, self).__init__(paths=[{}], weights=[-np.inf], top=top, ignore_subset=ignore_subset)
+        super(WHDFS, self).__init__(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
 
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
-        self.wlimit_func = self.bam.get_weight
+        # self.wlimit_func = self.bam.get_weight
+        self.wlimit_func = self.weight_func
         self.top_weight = self._top_weights_default
         self.shared_memory = False
 
@@ -230,7 +231,7 @@ class WHDFS(Results):
         """
 
         if reset_result:
-            super().__init__(paths=[{}], weights=[-np.inf], top=self.top, ignore_subset=self.ignore_subset)
+            super().__init__(paths=[{}], weights=[0.0], top=self.top, ignore_subset=self.ignore_subset)
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
         self.bam.reset_source(source=source_node)
