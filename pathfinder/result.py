@@ -92,7 +92,7 @@ class Results():
         return self._res[:self._top]
 
     @property
-    def get_weights(self) -> list[set]:
+    def get_weights(self) -> list[float]:
         return [item.weight for item in self.res]
 
     @property
