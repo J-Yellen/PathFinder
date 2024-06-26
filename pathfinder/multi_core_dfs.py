@@ -86,8 +86,6 @@ def run_multicore_hdfs(binary_acceptance_obj: BinaryAcceptance, num_cor: int = 1
     result = Results(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
     for _, res in dict(outputdict).items():
         result.add_results_from_results(res)
-    outputdict.clear()
-    args['result'] = result
     shm_object.close()
     shm_object.unlink()
 
