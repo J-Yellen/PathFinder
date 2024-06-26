@@ -235,10 +235,12 @@ class WHDFS(Results):
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
         self.bam.reset_source(source=source_node)
-        if ignore_child is not None and len(ignore_child) != runs:
+        if ignore_child is None:
+            ignore_child = [None] * runs
+        if len(ignore_child) != runs:
             raise Exception('"ignore_child" length does not match the number of runs')
         for i in range(source_node, runs + source_node):
-            ignore = ignore_child[i] if ignore_child is not None else None
+            ignore = ignore_child[i]
             self.whdfs(ignore_child=ignore)
             if i < self.bam.dim - 1:
                 self.bam.reset_source(i + 1)
