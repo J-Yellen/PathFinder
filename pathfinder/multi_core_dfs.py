@@ -36,8 +36,8 @@ def shared_memory_value(shared_object_name, num_cor, idx, value):
 def get_best_weight(shared_object_name, num_cor) -> float:
     existing_shm = shm.SharedMemory(name=shared_object_name)
     shared_array = np.ndarray(num_cor, dtype=np.float64, buffer=existing_shm.buf)
-    existing_shm.close()
     value = max(shared_array)
+    existing_shm.close()
     return value
 
 
@@ -47,7 +47,7 @@ def _whdfs_worker(args: Dict, return_dict: dict[int, Result], shared_object_name
     result.set_shared_memory_update = partial(shared_memory_value, shared_object_name=shared_object_name,
                                               num_cor=args['num_cor'], idx=args['childId'])
     result.set_top_weight = partial(get_best_weight, shared_object_name=shared_object_name, num_cor=args['num_cor'])
-    result.add_results_from_results(args['result'])
+    # result.add_results_from_results(args['result'])
     result.find_paths(runs=None, ignore_child=args['ignore_nodes'], reset_result=False)
 
     return_dict.update({args['childId']: result})
@@ -57,16 +57,17 @@ def run_multicore_hdfs(binary_acceptance_obj: BinaryAcceptance, num_cor: int = 1
                        ignore_subset: bool = True, runs: Optional[int] = None):
 
     args = dict(bam=binary_acceptance_obj, top=top, ignore_subset=ignore_subset, runs=None)
-    result = Results(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
+    # result = Results(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
     if runs is None or runs > binary_acceptance_obj.dim:
         runs = binary_acceptance_obj.dim
     args['runs'] = 1
-    args['result'] = result
+    # args['result'] = result
     args['num_cor'] = num_cor
     args['top'] = top
     args['nbytes'] = np.zeros(num_cor, dtype=np.float64).nbytes
     manager = Manager()
     outputdict = manager.dict()
+    jobs = []
     shm_object = shm.SharedMemory(name='top_results', create=True, size=args['nbytes'])
     chunked = {i: [] for i in range(num_cor)}
     for source in range(0, runs):
@@ -74,18 +75,18 @@ def run_multicore_hdfs(binary_acceptance_obj: BinaryAcceptance, num_cor: int = 1
         available = binary_acceptance_obj.get_source_row_index
         for i, run_chunk in enumerate(split_list_into_sublists(available, num_cor)):
             chunked[i].append([j for j in available if j not in run_chunk])
-
     for child, index_list in chunked.items():
         args['ignore_nodes'] = index_list
         args['childId'] = child
-        jobs = []
         p = Process(target=_whdfs_worker, args=(args, outputdict, shm_object.name))
         jobs.append(p)
         p.start()
     for p in jobs:
         p.join()
-    for _, res in outputdict.items():
+    result = Results(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
+    for _, res in dict(outputdict).items():
         result.add_results_from_results(res)
+    outputdict.clear()
     args['result'] = result
     shm_object.close()
     shm_object.unlink()
