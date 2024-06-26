@@ -55,29 +55,29 @@ def _whdfs_worker(args: Dict, return_dict: dict[int, Result], shared_object_name
 
 def run_multicore_hdfs(binary_acceptance_obj: BinaryAcceptance, num_cor: int = 1, top: int = 10,
                        ignore_subset: bool = True, runs: Optional[int] = None):
-
-    args = dict(bam=binary_acceptance_obj, top=top, ignore_subset=ignore_subset, runs=None)
-    # result = Results(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
+    # Check number of runs is not > shape of binary acceptance matrix
     if runs is None or runs > binary_acceptance_obj.dim:
         runs = binary_acceptance_obj.dim
-    args['runs'] = 1
-    # args['result'] = result
-    args['num_cor'] = num_cor
-    args['top'] = top
-    args['nbytes'] = np.zeros(num_cor, dtype=np.float64).nbytes
+    # Default dictionary for multi-process worker
+    args = dict(bam=binary_acceptance_obj, num_cor=num_cor, top=top, ignore_subset=ignore_subset,
+                runs=1, childId=0, ignore_nodes=[])
+    # Number of bytes required for shared array (shm_object)
+    nbytes = np.zeros(num_cor, dtype=np.float64).nbytes
+    shm_object = shm.SharedMemory(name='top_results', create=True, size=nbytes)
     manager = Manager()
     outputdict = manager.dict()
     jobs = []
-    shm_object = shm.SharedMemory(name='top_results', create=True, size=args['nbytes'])
-    chunked = {i: [] for i in range(num_cor)}
+    # Each process starts from the same source node but has a list of initial children to skip
+    # the skip condition results in a list of unique initial path configurations for each process explore
+    children_to_skip_per_process = {nc_i: [] for nc_i in range(num_cor)}
     for source in range(0, runs):
         binary_acceptance_obj.reset_source(source=source)
         available = binary_acceptance_obj.get_source_row_index
         for i, run_chunk in enumerate(split_list_into_sublists(available, num_cor)):
-            chunked[i].append([j for j in available if j not in run_chunk])
-    for child, index_list in chunked.items():
-        args['ignore_nodes'] = index_list
+            children_to_skip_per_process[i].append([j for j in available if j not in run_chunk])
+    for child, index_list in children_to_skip_per_process.items():
         args['childId'] = child
+        args['ignore_nodes'] = index_list
         p = Process(target=_whdfs_worker, args=(args, outputdict, shm_object.name))
         jobs.append(p)
         p.start()
