@@ -24,19 +24,20 @@ def split_list_into_sublists(lst, n):
     return sublists
 
 
-def shared_memory_value(shared_object_name, num_cor, idx, value):
+def shared_memory_value(shared_object_name, top, value):
     existing_shm = shm.SharedMemory(name=shared_object_name)
-    shared_array = np.ndarray(num_cor, dtype=np.float64, buffer=existing_shm.buf)
+    shared_array = np.ndarray(top, dtype=np.float64, buffer=existing_shm.buf)
+    idx = np.argmin(shared_array)
     shared_array[idx] = value
-    new_max = max(shared_array)
+    new_max = np.min(shared_array)
     existing_shm.close()
     return new_max
 
 
-def get_best_weight(shared_object_name, num_cor) -> float:
+def get_best_weight(shared_object_name, top) -> float:
     existing_shm = shm.SharedMemory(name=shared_object_name)
-    shared_array = np.ndarray(num_cor, dtype=np.float64, buffer=existing_shm.buf)
-    value = max(shared_array)
+    shared_array = np.ndarray(top, dtype=np.float64, buffer=existing_shm.buf)
+    value = np.min(shared_array)
     existing_shm.close()
     return value
 
@@ -45,9 +46,9 @@ def _whdfs_worker(args: Dict, return_dict: dict[int, Result], shared_object_name
 
     result = WHDFS(binary_acceptance_obj=args['bam'], top=args['top'], ignore_subset=args['ignore_subset'])
     result.set_shared_memory_update = partial(shared_memory_value, shared_object_name=shared_object_name,
-                                              num_cor=args['num_cor'], idx=args['childId'])
+                                              top=args['top'])
     result.set_top_weight = partial(get_best_weight, shared_object_name=shared_object_name, num_cor=args['num_cor'])
-    # result.add_results_from_results(args['result'])
+
     result.find_paths(runs=None, ignore_child=args['ignore_nodes'], reset_result=False)
 
     return_dict.update({args['childId']: result})
@@ -62,7 +63,8 @@ def run_multicore_hdfs(binary_acceptance_obj: BinaryAcceptance, num_cor: int = 1
     args = dict(bam=binary_acceptance_obj, num_cor=num_cor, top=top, ignore_subset=ignore_subset,
                 runs=1, childId=0, ignore_nodes=[])
     # Number of bytes required for shared array (shm_object)
-    nbytes = np.zeros(num_cor, dtype=np.float64).nbytes
+    # nbytes = np.zeros(num_cor, dtype=np.float64).nbytes
+    nbytes = np.zeros(top, dtype=np.float64).nbytes
     shm_object = shm.SharedMemory(name='top_results', create=True, size=nbytes)
     manager = Manager()
     outputdict = manager.dict()
