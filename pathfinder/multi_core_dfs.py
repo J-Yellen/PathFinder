@@ -55,7 +55,7 @@ def _whdfs_worker(args: Dict, return_dict: dict[int, Result], shared_object_name
 
 
 def run_multicore_hdfs(binary_acceptance_obj: BinaryAcceptance, num_cor: int = 1, top: int = 10,
-                       ignore_subset: bool = True, runs: Optional[int] = None):
+                       ignore_subset: bool = True, runs: Optional[int] = None, sharedmemoryID: int = 0):
     # Check number of runs is not > shape of binary acceptance matrix
     if runs is None or runs > binary_acceptance_obj.dim:
         runs = binary_acceptance_obj.dim
@@ -63,9 +63,8 @@ def run_multicore_hdfs(binary_acceptance_obj: BinaryAcceptance, num_cor: int = 1
     args = dict(bam=binary_acceptance_obj, num_cor=num_cor, top=top, ignore_subset=ignore_subset,
                 runs=1, childId=0, ignore_nodes=[])
     # Number of bytes required for shared array (shm_object)
-    # nbytes = np.zeros(num_cor, dtype=np.float64).nbytes
     nbytes = np.zeros(top, dtype=np.float64).nbytes
-    shm_object = shm.SharedMemory(name='top_results', create=True, size=nbytes)
+    shm_object = shm.SharedMemory(name=f'top_results_{sharedmemoryID}', create=True, size=nbytes)
     manager = Manager()
     outputdict = manager.dict()
     jobs = []
