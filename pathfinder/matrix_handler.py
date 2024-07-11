@@ -159,7 +159,7 @@ is array of integers, converting format to True/False')
         self.set_weighted_graph()
 
     def sort_bam_by_weight(self) -> Array1D_int:
-        index_map = np.argsort(self.weights[:-1:])[::-1]
+        index_map = np.argsort(self.weights[:-1:])[::-1].astype(int)
         self.weights[:-1:] = self.weights[index_map]
         self.bin_acc = self.bin_acc[index_map, :][:, index_map]
         if self.labels is not None:
