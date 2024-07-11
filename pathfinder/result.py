@@ -179,7 +179,7 @@ class Results():
                 self._res += self._set_res(paths, weight, sort=True)
                 self.res_sort(trim=True)
 
-    def remap_path(self, index_map: Union[dict, list]) -> list[dict[list, float]]:
+    def remap_path(self, index_map: Union[dict, list]) -> 'Results':
         """
         Convert result path index using ether a dictionary or list of mapped indices.
 
@@ -196,17 +196,15 @@ class Results():
             that preserved the new path map order
         """
 
-        list_of_dicts = []
-        for item in self.res:
-            new_result = {'Path': {index_map[i] for i in sorted(item.path)},
-                          'Weight': item.weight
-                          }
-            list_of_dicts.append(new_result)
-        return list_of_dicts
+        dict_of_results = {}
+        for i, item in enumerate(self.res):
+            dict_of_results[i] = {'path': {int(index_map[i]) for i in sorted(item.path)},
+                                  'weight': item.weight}
+        return self.from_dict(dict_of_results)
 
     def __eq__(self, other: 'Results') -> bool:
         equal = False
-        if len(self.top) == len(other.top):
+        if self.top == other.top:
             other_paths_in_self = all([o.path == s.path for o, s in zip(other.res, self.res)])
             weights_match = self.get_weights == other.get_weights
             equal = other_paths_in_self & weights_match
