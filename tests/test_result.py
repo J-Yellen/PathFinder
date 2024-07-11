@@ -77,7 +77,8 @@ def test_remap_path():
     map_result1 = results.remap_path(map1)
     map_result2 = results.remap_path(map2)
     assert map_result1 == map_result2
-    assert map_result1[1]['Path'] == {map1[i] for i in paths[1]}
+    assert map_result1.get_paths[1] == sorted([map1[i] for i in paths[1]])
+    assert map_result1.get_raw_paths[1] == {map1[i] for i in paths[1]}
 
 
 if __name__ == '__main__':

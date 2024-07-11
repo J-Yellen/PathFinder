@@ -26,7 +26,7 @@ def test_HDFS_1():
     hdfs = HDFS(binary_acceptance_obj=bam, top=3, ignore_subset=True)
     hdfs.find_paths(verbose=False)
     assert hdfs.best.path == {1, 2}
-    assert hdfs.remap_path(index_map)[0]['Path'] == {13, 24}
+    assert hdfs.remap_path(index_map).best.path == {13, 24}
 
 
 def test_WHDFS_1():
@@ -37,7 +37,7 @@ def test_WHDFS_1():
     whdfs = WHDFS(binary_acceptance_obj=bam, top=3, ignore_subset=True)
     whdfs.find_paths(verbose=False)
     assert whdfs.best.path == {1, 2}
-    assert whdfs.remap_path(index_map)[0]['Path'] == {13, 24}
+    assert whdfs.remap_path(index_map).best.path == {13, 24}
 
 
 def test_WHDFS_eq_HDFS():
