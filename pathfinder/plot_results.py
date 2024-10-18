@@ -90,8 +90,6 @@ def add_results(ax: plt.Axes, res: Results, lim: int) -> None:
         if len(item['x']) > 1:
             ax.plot(item['x'], item['y'], lw=3, color=item['color'], linestyle='-',
                     label=f"{res.get_weights[i]:.2g}")
-        # else:
-        #     ax.scatter(item['x'], item['y'], s=15, color=item['color'], label=f"{res.get_weights[i]:.2g}")
 
 
 def add_sink_data(bam: BinaryAcceptance, result: Results, xy_labels: Optional[list] = None):
