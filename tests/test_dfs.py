@@ -23,7 +23,7 @@ def test_HDFS_1():
     weights = pseudo_weights(N=25, sort=False)
     bam = BinaryAcceptance(pseudo, weights=weights)
     index_map = bam.sort_bam_by_weight()
-    hdfs = HDFS(binary_acceptance_obj=bam, top=3, ignore_subset=True)
+    hdfs = HDFS(binary_acceptance_obj=bam, top=3, allow_subset=False)
     hdfs.find_paths(verbose=False)
     assert hdfs.best.path == {1, 2}
     assert hdfs.remap_path(index_map).best.path == {13, 24}
@@ -34,7 +34,7 @@ def test_WHDFS_1():
     weights = pseudo_weights(N=25, sort=False)
     bam = BinaryAcceptance(pseudo, weights=weights)
     index_map = bam.sort_bam_by_weight()
-    whdfs = WHDFS(binary_acceptance_obj=bam, top=3, ignore_subset=True)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=3, allow_subset=False)
     whdfs.find_paths(verbose=False)
     assert whdfs.best.path == {1, 2}
     assert whdfs.remap_path(index_map).best.path == {13, 24}
@@ -44,9 +44,9 @@ def test_WHDFS_eq_HDFS():
     pseudo = pseudo_data(N=25, p=0.1)
     weights = pseudo_weights(N=25, sort=True)
     bam = BinaryAcceptance(pseudo, weights=weights)
-    whdfs = WHDFS(binary_acceptance_obj=bam, top=3, ignore_subset=True)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=3, allow_subset=False)
     whdfs.find_paths(verbose=False)
-    hdfs = WHDFS(binary_acceptance_obj=bam, top=3, ignore_subset=True)
+    hdfs = WHDFS(binary_acceptance_obj=bam, top=3, allow_subset=False)
     hdfs.find_paths(verbose=False)
     assert whdfs.res == hdfs.res
 
@@ -57,9 +57,9 @@ def test_basic_matrix():
                        [1, 1, 0]], dtype=bool)
     weights = None
     bam = BinaryAcceptance(pseudo, weights=weights)
-    whdfs = WHDFS(binary_acceptance_obj=bam, top=1, ignore_subset=True)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
     whdfs.find_paths(verbose=False)
-    hdfs = HDFS(binary_acceptance_obj=bam, top=1, ignore_subset=True)
+    hdfs = HDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
     hdfs.find_paths(verbose=False)
     assert whdfs.best.path == {0, 1, 2}
     assert whdfs.best.weight == 3
@@ -73,9 +73,9 @@ def test_basic_matrix2():
     weights = None
     threshold = 0.01
     bam = BinaryAcceptance(corr_matrix, weights=weights, threshold=threshold)
-    whdfs = WHDFS(binary_acceptance_obj=bam, top=1, ignore_subset=True)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
     whdfs.find_paths(verbose=False)
-    hdfs = WHDFS(binary_acceptance_obj=bam, top=1, ignore_subset=True)
+    hdfs = WHDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
     hdfs.find_paths(verbose=False)
     assert whdfs.best.path == {0, 1, 2}
     assert whdfs.best.weight == 3
