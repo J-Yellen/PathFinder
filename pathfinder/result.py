@@ -31,25 +31,25 @@ class Results():
     """
     Results class to handle lists of Result (path, weight) objects
     """
-    def __init__(self, paths: list[set], weights: list[float], top: int = 1, ignore_subset: bool = False):
+    def __init__(self, paths: list[set], weights: list[float], top: int = 1, allow_subset: bool = False):
         if len(paths) != len(weights):
             raise ValueError("Unequal length lists provided!")
-        self.ignore_subset = ignore_subset
+        self.allow_subset = allow_subset
         self._res = self._set_res(paths, weights)
         self._top = top
 
     @classmethod
-    def from_dict(self, result_dict: dict[int, dict], ignore_subset: bool = False) -> 'Results':
+    def from_dict(self, result_dict: dict[int, dict], allow_subset: bool = False) -> 'Results':
         top = len(result_dict)
         paths = [set(item.get('path')) for _, item in result_dict.items()]
         weights = [item.get('weight') for _, item in result_dict.items()]
-        return Results(paths=paths, weights=weights, top=top, ignore_subset=ignore_subset)
+        return Results(paths=paths, weights=weights, top=top, allow_subset=allow_subset)
 
     @classmethod
-    def from_json(self, json_file_name: PathLike, ignore_subset: bool = False) -> 'Results':
+    def from_json(self, json_file_name: PathLike, allow_subset: bool = False) -> 'Results':
         with open(json_file_name, "r") as json_file:
             result_dict = json.load(json_file)
-        return self.from_dict(result_dict, ignore_subset=ignore_subset)
+        return self.from_dict(result_dict, allow_subset=allow_subset)
 
     def to_dict(self) -> dict:
         return {f"{i}": {'path': list(item.path), 'weight': item.weight} for i, item in enumerate(self.res)}
@@ -71,7 +71,7 @@ class Results():
             list[Result]: List of result objects containing result for each path input
         """
         all_res = [Result(path=set(p), weight=w) for p, w in zip(paths, weights)]
-        if self.ignore_subset:
+        if not self.allow_subset:
             res = [item for item in all_res if not any(item.path < pth.path for pth in all_res)]
         else:
             res = all_res
@@ -149,17 +149,18 @@ class Results():
             bisect (bool, optional): Insert new result into sorted Results position. Defaults to True.
         """
         res_ = Result(path=set(path), weight=weight)
-        if self.ignore_subset:
-            if any(res_.path < pth for pth in self.get_raw_paths):
-                return
-        if res_ not in self._res:
-            if bisect:
-                idx = self._bisect_left(self._res, res_)
-                self._res.insert(idx, res_)
-            else:
-                self._res.append(res_)
-        if trim_to_top:
-            self._res = self.res
+        add_result = True
+        if not self.allow_subset:
+            add_result = not any(res_.path < pth for pth in self.get_raw_paths)
+        if add_result:
+            if res_ not in self._res:
+                if bisect:
+                    idx = self._bisect_left(self._res, res_)
+                    self._res.insert(idx, res_)
+                else:
+                    self._res.append(res_)
+            if trim_to_top:
+                self._res = self.res
 
     def add_results_from_results(self, result: 'Results') -> None:
         self.bulk_add_result(result.get_paths, result.get_weights)
@@ -172,7 +173,7 @@ class Results():
             weight (list[float]): List of Weights corresponding to the path input
         """
         if max(weight) > min(self.get_weights):
-            if self.ignore_subset:
+            if not self.allow_subset:
                 for pth, wgt in zip(paths, weight):
                     self.add_result(pth, wgt)
             else:
@@ -200,7 +201,7 @@ class Results():
         for i, item in enumerate(self.res):
             dict_of_results[i] = {'path': {int(index_map[i]) for i in sorted(item.path)},
                                   'weight': item.weight}
-        return self.from_dict(dict_of_results)
+        return self.from_dict(dict_of_results, allow_subset=self.allow_subset)
 
     def __eq__(self, other: 'Results') -> bool:
         equal = False
