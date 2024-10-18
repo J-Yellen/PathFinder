@@ -15,17 +15,18 @@ from typing import Iterable, Iterator, Optional, Tuple, Callable
 class HDFS(Results):
 
     def __init__(self, binary_acceptance_obj: BinaryAcceptance, top: int = 10,
-                 ignore_subset: bool = True) -> None:
+                 allow_subset: bool = False) -> None:
         """
             Hereditary Depth First Search Class
         Args:
             binary_acceptance_obj (BinaryAcceptance): BinaryAcceptance Object containing
             top (int, optional): _description_. Defaults to 10.
-            ignore_subset (bool, optional): _description_. Defaults to True.
+            allow_subset (bool, optional): _description_. Defaults to True.
         """
-        super().__init__(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
+        super().__init__(paths=[{}], weights=[0.0], top=top, allow_subset=allow_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
+        self.n_iteration = 0
 
     def hdfs(self, trim: bool = True, ignore_child: Optional[list] = None) -> Iterator:
         """
@@ -40,6 +41,7 @@ class HDFS(Results):
         stack = [(v for _, v in self.bam.edges(self.bam.source) if v not in ignore_child)]
         good_nodes = [set(v for _, v in self.bam.edges(self.bam.source))]
         while stack:
+            self.n_iteration += 1
             children = stack[-1]
             child = next(children, None)
             if child is None:
@@ -89,7 +91,8 @@ class HDFS(Results):
             ignore_child = [int(ignore_child)]
         self.bam.reset_source(source=source_node)
         if len(self.res) > 1:
-            super().__init__(paths=[{}], weights=[0.0], top=self.top, ignore_subset=self.ignore_subset)
+            self.n_iteration = 0
+            super().__init__(paths=[{}], weights=[0.0], top=self.top, allow_subset=self.allow_subset)
 
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
@@ -108,11 +111,11 @@ class HDFS(Results):
 
 class WHDFS(Results):
 
-    def __init__(self, binary_acceptance_obj: BinaryAcceptance, top: int = 10, ignore_subset: bool = True) -> None:
+    def __init__(self, binary_acceptance_obj: BinaryAcceptance, top: int = 10, allow_subset: bool = False) -> None:
         """
         Weighted Hereditary Depth First Search
         """
-        super(WHDFS, self).__init__(paths=[{}], weights=[0.0], top=top, ignore_subset=ignore_subset)
+        super(WHDFS, self).__init__(paths=[{}], weights=[0.0], top=top, allow_subset=allow_subset)
 
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
@@ -120,6 +123,7 @@ class WHDFS(Results):
         self.wlimit_func = self.weight_func
         self.top_weight = self._top_weights_default
         self.shared_memory = False
+        self.n_iteration = 0
 
     @property
     def weight_func(self) -> float:
@@ -175,6 +179,7 @@ class WHDFS(Results):
         max_wgt = self.top_weight()
         # iterate over nodes building and dropping from stack until empty
         while stack:
+            self.n_iteration += 1
             # define children as the generator from the last element of stack
             children = stack[-1]
             # The child node is the next element from children
@@ -231,7 +236,8 @@ class WHDFS(Results):
         """
 
         if reset_result:
-            super().__init__(paths=[{}], weights=[0.0], top=self.top, ignore_subset=self.ignore_subset)
+            super().__init__(paths=[{}], weights=[0.0], top=self.top, allow_subset=self.allow_subset)
+            self.n_iteration = 0
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
         self.bam.reset_source(source=source_node)
