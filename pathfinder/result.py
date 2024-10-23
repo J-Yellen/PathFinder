@@ -5,7 +5,7 @@
 #####################################
 """
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 from os import PathLike
 import json
 
@@ -35,7 +35,7 @@ class Results():
         if len(paths) != len(weights):
             raise ValueError("Unequal length lists provided!")
         self.allow_subset = allow_subset
-        self._res = self._set_res(paths, weights)
+        self._res, self.contains_empty = self._set_res(paths, weights)
         self._top = top
 
     @classmethod
@@ -58,7 +58,7 @@ class Results():
         with open(file_name, "w") as outfile:
             json.dump(self.to_dict(), outfile, indent=4)
 
-    def _set_res(self, paths: list[set], weights: list[float], sort: bool = True) -> list[Result]:
+    def _set_res(self, paths: list[set], weights: list[float], sort: bool = True) -> Tuple[list[Result], bool]:
         """
         Takes lists of paths and weights and combines to create a list of Result type objects.
 
@@ -70,14 +70,15 @@ class Results():
         Returns:
             list[Result]: List of result objects containing result for each path input
         """
+        contains_empty = any([False if p else True for p in paths])
         all_res = [Result(path=set(p), weight=w) for p, w in zip(paths, weights)]
         if not self.allow_subset:
             res = [item for item in all_res if not any(item.path < pth.path for pth in all_res)]
         else:
             res = all_res
         if sort:
-            return sorted(res, reverse=True)
-        return res
+            res = sorted(res, reverse=True)
+        return res, contains_empty
 
     @property
     def top(self) -> None:
@@ -177,10 +178,11 @@ class Results():
                 for pth, wgt in zip(paths, weight):
                     self.add_result(pth, wgt)
             else:
-                self._res += self._set_res(paths, weight, sort=True)
+                new, _ = self._set_res(paths, weight, sort=True)
+                self._res += new
                 self.res_sort(trim=True)
 
-    def remap_path(self, index_map: Union[dict, list]) -> 'Results':
+    def remap_path(self, index_map: Optional[Union[dict, list]] = None, weight_offset: float = 0.0) -> 'Results':
         """
         Convert result path index using ether a dictionary or list of mapped indices.
 
@@ -198,9 +200,16 @@ class Results():
         """
 
         dict_of_results = {}
-        for i, item in enumerate(self.res):
-            dict_of_results[i] = {'path': {int(index_map[i]) for i in sorted(item.path)},
-                                  'weight': item.weight}
+        if index_map is None:
+            for i, item in enumerate(self.res):
+                dict_of_results[i] = {'path': {p for p in sorted(item.path)},
+                                      'weight': item.weight - (len(item.path) * weight_offset)}
+
+        else:
+            for i, item in enumerate(self.res):
+                dict_of_results[i] = {'path': {int(index_map[p]) for p in sorted(item.path)},
+                                      'weight': item.weight - (len(item.path) * weight_offset)}
+
         return self.from_dict(dict_of_results, allow_subset=self.allow_subset)
 
     def __eq__(self, other: 'Results') -> bool:
