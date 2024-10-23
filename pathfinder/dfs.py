@@ -23,6 +23,8 @@ class HDFS(Results):
             top (int, optional): _description_. Defaults to 10.
             allow_subset (bool, optional): _description_. Defaults to True.
         """
+        if not allow_subset and min(binary_acceptance_obj.weights) < 0:
+            raise Exception('WARNING! Negative weights provided. Subset exclusion cannot be guarantied!')
         super().__init__(paths=[{}], weights=[0.0], top=top, allow_subset=allow_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
@@ -115,6 +117,8 @@ class WHDFS(Results):
         """
         Weighted Hereditary Depth First Search
         """
+        if not allow_subset and min(binary_acceptance_obj.weights) < 0:
+            raise Exception('WARNING! Negative weights provided. Subset exclusion cannot be guarantied!')
         super(WHDFS, self).__init__(paths=[{}], weights=[0.0], top=top, allow_subset=allow_subset)
 
         self.bam = binary_acceptance_obj

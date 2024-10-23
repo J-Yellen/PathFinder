@@ -65,7 +65,8 @@ class BinaryAcceptance(Graph):
         self.weights = self.set_weights(weights, self.dim)
         self.labels = labels
         if not allow_negative_weights and min(self.weights) < 0.0:
-            raise Exception('WARNING! Negative weights provided. Rescale or set allow_negative_weights to True')
+            raise Exception('WARNING! Negative weights provided.\
+ Rescale to positive or set allow_negative_weights=True')
         self.set_weighted_graph()
 
     @property
