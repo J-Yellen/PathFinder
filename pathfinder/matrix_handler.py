@@ -9,10 +9,10 @@ import numpy as np
 from typing import Optional, Union, Annotated, TypeVar, Literal
 
 ScalarType_co = TypeVar("ScalarType_co", bound=np.generic, contravariant=True)
-Array1D_Float = Annotated[np.ndarray[ScalarType_co, np.float_], Literal['N']]
-Array1D_int = Annotated[np.ndarray[ScalarType_co, np.int_], Literal['N']]
+Array1D_Float = Annotated[np.ndarray[ScalarType_co, np.float64], Literal['N']]
+Array1D_int = Annotated[np.ndarray[ScalarType_co, np.int64], Literal['N']]
 Array1D_bool = Annotated[np.ndarray[ScalarType_co, bool], Literal['N']]
-Array2D_Float = Annotated[np.ndarray[ScalarType_co, np.float_], Literal['N', 'N']]
+Array2D_Float = Annotated[np.ndarray[ScalarType_co, np.float64], Literal['N', 'N']]
 Array2D_Bool = Annotated[np.ndarray[ScalarType_co, bool], Literal['N', 'N']]
 
 
@@ -22,14 +22,14 @@ class Graph():
         self._adj = {}
         self._node = {}
 
-    def __construct_nodes(self, edge: list) -> None:
+    def _construct_nodes(self, edge: list) -> None:
         for item in edge:
             if item[0] not in self._node:
                 self._node[int(item[0])] = {}
                 self._adj[int(item[0])] = {}
 
-    def __construct_adj(self, edge: list) -> None:
-        self.__construct_nodes(edge)
+    def _construct_adj(self, edge: list) -> None:
+        self._construct_nodes(edge)
         for item in edge:
             source, child, weight = item
             if child not in self._adj[source]:
@@ -41,7 +41,7 @@ class Graph():
         if clear:
             self._adj = {}
             self._node = {}
-        self.__construct_adj(edges)
+        self._construct_adj(edges)
 
     def edges(self, srce: int = None) -> list:
         if isinstance(srce, list):
