@@ -103,7 +103,6 @@ class HDFS(Results):
                 paths = list(item)
                 weights = [self.weight_func(p) for p in paths if p]
                 self.bulk_add_result(paths, weights)
-                self
             if i < self.bam.dim - 1:
                 self.bam.reset_source(i + 1)
         self.bam.reset_source()
