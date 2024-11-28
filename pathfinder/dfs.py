@@ -125,7 +125,6 @@ class WHDFS(Results):
         # self.wlimit_func = self.bam.get_weight
         self.wlimit_func = self.weight_func
         self.top_weight = self._top_weights_default
-        self.shared_memory = False
         self.n_iteration = 0
 
     @property
@@ -152,15 +151,6 @@ class WHDFS(Results):
 
     def _top_weights_default(self) -> float:
         return min(self.get_weights)
-
-    def shared_memory_update(self, value) -> None:
-        if not self.shared_memory:
-            raise AttributeError('Shared_memory_update not set, please use set_shared_memory_update.')
-        self._shared_memory_update(value)
-
-    def set_shared_memory_update(self, shared_memory_function: Callable) -> None:
-        self.shared_memory = True
-        self._shared_memory_update = shared_memory_function
 
     def whdfs(self, ignore_child: Optional[list] = None) -> None:
         """
@@ -211,10 +201,7 @@ class WHDFS(Results):
                     if currnt_wgt > max_wgt:
                         # update result
                         self.add_result(pth[:-1:], currnt_wgt)
-                        if self.shared_memory:
-                            max_wgt = self.shared_memory_update(max_wgt)
-                        else:
-                            max_wgt = self.top_weight()
+                        max_wgt = self.top_weight()
                 # is the remaining weight enough to continue "down this route"
                 if (currnt_wgt + remain_wgt) > max_wgt:
                     visited[child] = None
