@@ -25,7 +25,7 @@ class HDFS(Results):
         """
         if not allow_subset and min(binary_acceptance_obj.weights) < 0:
             raise Exception('WARNING! Negative weights provided. Subset exclusion cannot be guarantied!')
-        super().__init__(paths=[{}], weights=[0.0], top=top, allow_subset=allow_subset)
+        super().__init__(top=top, allow_subset=allow_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
         self.n_iteration = 0
@@ -94,7 +94,7 @@ class HDFS(Results):
         self.bam.reset_source(source=source_node)
         if len(self.res) > 1:
             self.n_iteration = 0
-            super().__init__(paths=[{}], weights=[0.0], top=self.top, allow_subset=self.allow_subset)
+            super().__init__(top=self.top, allow_subset=self.allow_subset)
 
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim
@@ -118,7 +118,7 @@ class WHDFS(Results):
         """
         if not allow_subset and min(binary_acceptance_obj.weights) < 0:
             raise Exception('WARNING! Negative weights provided. Subset exclusion cannot be guarantied!')
-        super(WHDFS, self).__init__(paths=[{}], weights=[0.0], top=top, allow_subset=allow_subset)
+        super(WHDFS, self).__init__(top=top, allow_subset=allow_subset)
 
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
@@ -226,7 +226,7 @@ class WHDFS(Results):
         """
 
         if reset_result:
-            super().__init__(paths=[{}], weights=[0.0], top=self.top, allow_subset=self.allow_subset)
+            super().__init__(top=self.top, allow_subset=self.allow_subset)
             self.n_iteration = 0
         if runs is None or runs > self.bam.dim:
             runs = self.bam.dim

@@ -31,12 +31,16 @@ class Results():
     """
     Results class to handle lists of Result (path, weight) objects
     """
-    def __init__(self, paths: list[set], weights: list[float], top: int = 1, allow_subset: bool = False):
-        if len(paths) != len(weights):
-            raise ValueError("Unequal length lists provided!")
+    def __init__(self, paths: Optional[list[set]] = None, weights: Optional[list[float]] = None, top: int = 1,
+                 allow_subset: bool = False):
         self.allow_subset = allow_subset
-        self._res, self.contains_empty = self._set_res(paths, weights)
         self._top = top
+        if paths is None:
+            self._res = []
+        else:
+            if len(paths) != len(weights):
+                raise ValueError("Unequal length lists provided!")
+            self._res = self._set_res(paths, weights)
 
     @classmethod
     def from_dict(self, result_dict: dict[int, dict], allow_subset: bool = False) -> 'Results':
@@ -70,7 +74,6 @@ class Results():
         Returns:
             list[Result]: List of result objects containing result for each path input
         """
-        contains_empty = any([False if p else True for p in paths])
         all_res = [Result(path=set(p), weight=w) for p, w in zip(paths, weights)]
         if not self.allow_subset:
             res = [item for item in all_res if not any(item.path < pth.path for pth in all_res)]
@@ -78,7 +81,7 @@ class Results():
             res = all_res
         if sort:
             res = sorted(res, reverse=True)
-        return res, contains_empty
+        return res
 
     @property
     def top(self) -> None:
@@ -90,7 +93,10 @@ class Results():
 
     @property
     def res(self) -> list[Result]:
-        return self._res[:self._top]
+        if self._res:
+            return self._res[:self._top]
+        else:
+            return [Result({None}, 0)]
 
     @property
     def get_weights(self) -> list[float]:
@@ -101,12 +107,12 @@ class Results():
         return [sorted(item.path) for item in self.res]
 
     @property
-    def get_raw_paths(self) -> list[list]:
+    def get_raw_paths(self) -> list[set]:
         return [item.path for item in self.res]
 
     @property
     def best(self) -> Result:
-        return max(self._res)
+        return max(self.res)
 
     @staticmethod
     def _bisect_left(to_bisect: list[Result], new_item: Result,
@@ -152,7 +158,7 @@ class Results():
         res_ = Result(path=set(path), weight=weight)
         add_result = True
         if not self.allow_subset:
-            add_result = not any(res_.path < pth for pth in self.get_raw_paths)
+            add_result = not any(res_.path <= pth for pth in self.get_raw_paths)
         if add_result:
             if res_ not in self._res:
                 if bisect:
@@ -178,8 +184,8 @@ class Results():
                 for pth, wgt in zip(paths, weight):
                     self.add_result(pth, wgt)
             else:
-                new, _ = self._set_res(paths, weight, sort=True)
-                self._res += new
+                new = self._set_res(paths, weight, sort=True)
+                self._res.extend(new)
                 self.res_sort(trim=True)
 
     def remap_path(self, index_map: Optional[Union[dict, list]] = None, weight_offset: float = 0.0) -> 'Results':
