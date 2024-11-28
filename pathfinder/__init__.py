@@ -9,4 +9,3 @@
 from .matrix_handler import BinaryAcceptance
 from .dfs import HDFS, WHDFS
 from .result import Results
-from .multi_core_dfs import run_multicore_hdfs
