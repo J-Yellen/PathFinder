@@ -9,9 +9,9 @@ import numpy as np
 from typing import Optional, Union, Annotated, TypeVar, Literal
 
 ScalarType_co = TypeVar("ScalarType_co", bound=np.generic, contravariant=True)
-Array1D_Float = Annotated[np.ndarray[ScalarType_co, np.float_], Literal['N']]
-Array1D_int = Annotated[np.ndarray[ScalarType_co, np.int_], Literal['N']]
-Array2D_Float = Annotated[np.ndarray[ScalarType_co, np.float_], Literal['N', 'N']]
+Array1D_Float = Annotated[np.ndarray[ScalarType_co, np.float64], Literal['N']]
+Array1D_int = Annotated[np.ndarray[ScalarType_co, np.int64], Literal['N']]
+Array2D_Float = Annotated[np.ndarray[ScalarType_co, np.float64], Literal['N', 'N']]
 Array2D_Bool = Annotated[np.ndarray[ScalarType_co, bool], Literal['N', 'N']]
 
 
