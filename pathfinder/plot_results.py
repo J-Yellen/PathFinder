@@ -62,7 +62,7 @@ def format_path(path: list) -> np.ndarray:
     return [xval, yval]
 
 
-def make_path0(paths: list, shift: bool = True) -> dict:
+def make_path(paths: list, shift: bool = True) -> dict:
     shift_i = 1. / (len(paths) + 1)
     lshft = 0.5
     c_vals = np.linspace(0.0, 1, len(paths))
@@ -86,7 +86,7 @@ def make_path0(paths: list, shift: bool = True) -> dict:
 
 
 def add_results(ax: plt.Axes, res: Results, lim: int) -> None:
-    for i, item in make_path0(res.get_paths[:lim:], shift=True).items():
+    for i, item in make_path(res.get_paths[:lim:], shift=True).items():
         if len(item['x']) > 1:
             ax.plot(item['x'], item['y'], lw=3, color=item['color'], linestyle='-',
                     label=f"{res.get_weights[i]:.2g}")
