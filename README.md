@@ -107,8 +107,7 @@ Given a pairwise relation matrix $\rho$ (e.g., correlation) and threshold $T$, t
 
 $$
 \begin{aligned}
-B_{ij} &= 1 \quad \text{if } \
-|\rho_{ij}| < T \text{ (features can be combined)} \\
+B_{ij} &= 1 \quad \text{if } |\rho_{ij}| < T \text{ (features can be combined)} \\
 B_{ij} &= 0 \quad \text{otherwise (features are too correlated)}
 \end{aligned}
 $$
@@ -139,7 +138,7 @@ Optimises for weighted objectives by:
 2. Maintaining best-path-so-far
 3. **Early termination**: Abandoning branches where:
 
-$$\text{current\_weight} + \text{max\_remaining\_weight} < \text{best\_weight}$$
+$$\text{current weight} + \text{max remaining weight} < \text{best weight}$$
 
 **Complexity**: Typically $O(n \log n)$ for practical $f_A$ values. Up to 1000× faster than HDFS for $f_A = 0.75$.
 
