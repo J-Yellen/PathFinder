@@ -107,14 +107,17 @@ Given a pairwise relation matrix $\rho$ (e.g., correlation) and threshold $T$, t
 
 $$
 \begin{aligned}
-B_{ij} &= 1 \quad \text{if } |\rho_{ij}| < T \text{ (features can be combined)} \\
+B_{ij} &= 1 \quad \text{if } \
+|\rho_{ij}| < T \text{ (features can be combined)} \\
 B_{ij} &= 0 \quad \text{otherwise (features are too correlated)}
 \end{aligned}
 $$
 
 The fraction of allowed combinations is:
 
-$$f_A = \frac{2}{n(n-1)} \sum_{i<j} B_{ij}$$
+$$
+f_A = \frac{2}{n(n-1)} \sum_{i<j} B_{ij}
+$$
 
 ### Algorithms
 
