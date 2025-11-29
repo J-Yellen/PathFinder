@@ -193,7 +193,7 @@ def add_sink_data(
 
 def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional[int] = None,
          size: int = 16, xy_labels: Optional[List[str]] = None,
-         ax: Optional[Axes] = None, show_sink: bool = False) -> Optional[Tuple[Figure, Axes]]:
+         ax: Optional[Axes] = None, show_sink: bool = False) -> Tuple[Figure, Axes]:
     """
     Visualise Binary Acceptance Matrix with optional result paths overlaid.
 
@@ -220,7 +220,7 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
         >>> results = HDFS(bam, top=5).find_paths()
         >>> fig, ax = plot(bam, results, size=12)
     """
-    fig = None
+    fig = Figure()
     cmap = ListedColormap(['k', 'darkgrey', 'lightgrey', 'w'], name='bwg')
     if show_sink and results is not None:
         dat, result, xy_labels = add_sink_data(bam, results, copy(xy_labels))
@@ -249,5 +249,5 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
         if top is None:
             top = result._top
         add_results(axis, result, lim=top)
-    if fig is not None:
-        return fig, axis
+
+    return fig, axis
