@@ -61,5 +61,33 @@ def test_graph():
     assert graph.edges(3) == []
 
 
+def test_matrix_handler_negative_weights_error():
+    """Test BinaryAcceptance raises error for negative weights when not allowed"""
+    matrix = np.array([[0, 1], [1, 0]], dtype=bool)
+    weights = np.array([1.0, -1.0])
+    with pytest.raises(ValueError, match="Negative weights"):
+        BinaryAcceptance(matrix, weights=weights, allow_negative_weights=False)
+
+
+def test_matrix_handler_with_labels():
+    """Test BinaryAcceptance with labels parameter"""
+    matrix = np.array([[0, 1, 1],
+                       [1, 0, 1],
+                       [1, 1, 0]], dtype=bool)
+    labels = ['A', 'B', 'C']
+    bam = BinaryAcceptance(matrix, labels=labels)
+    assert bam.labels == labels
+
+
+def test_matrix_handler_reset_source_out_of_range():
+    """Test BinaryAcceptance.reset_source with out-of-range value defaults to 0"""
+    matrix = np.array([[0, 1], [1, 0]], dtype=bool)
+    bam = BinaryAcceptance(matrix)
+    bam.reset_source(1)
+    assert bam.source == 1
+    bam.reset_source(10)  # Out of range, should default to 0
+    assert bam.source == 0
+
+
 if __name__ == '__main__':
     test_reset_source()

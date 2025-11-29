@@ -53,3 +53,45 @@ def test_plot():
     fig, axis = result_plot
     assert isinstance(fig, figure.Figure)
     assert isinstance(axis, axes.Axes)
+
+
+def test_add_sink_data():
+    """Test add_sink_data function with results"""
+    p, N = 0.5, 5
+    pseudo = pseudo_data(N, p)
+    weights = pseudo_weights(N, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights)
+    result = Results.from_dict({0: {'path': [0, 1, 2], 'weight': 1.9}})
+
+    # Test with results and labels
+    dat, new_result, labels = plot_results.add_sink_data(bam, result, xy_labels=['A', 'B', 'C', 'D', 'E'])
+    assert dat.shape == (N + 1, N + 1)
+    assert 'Sink' in labels
+    assert new_result is not None
+
+    # Test without labels (generates default labels including sink)
+    dat2, new_result2, labels2 = plot_results.add_sink_data(bam, result)
+    assert labels2[-1] == 'Sink'
+    assert len(labels2) > N  # Includes sink node
+
+
+def test_plot_with_custom_labels():
+    """Test plot function with custom labels"""
+    result = Results.from_dict({0: {'path': [0, 1], 'weight': 1.0}})
+    pseudo = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]], dtype=bool)
+    bam = BinaryAcceptance(pseudo)
+    labels = ['Feature A', 'Feature B', 'Feature C']
+
+    fig, axis = plot_results.plot(bam, result, xy_labels=labels, size=10)
+    assert fig is not None
+    assert axis is not None
+
+
+def test_plot_without_results():
+    """Test plot function without results (just BAM)"""
+    pseudo = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]], dtype=bool)
+    bam = BinaryAcceptance(pseudo)
+
+    fig, axis = plot_results.plot(bam, results=None, size=8)
+    assert fig is not None
+    assert axis is not None
