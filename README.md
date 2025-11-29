@@ -153,36 +153,65 @@ The `sort_bam_by_weight()` method returns an index map to convert results back t
 
 ## Usage Examples
 
-### Example 1: Feature Selection for Machine Learning
+### Example 1: Feature Selection for Machine Learning (Simple)
 
 ```python
 import pathfinder as pf
 from sklearn.datasets import load_breast_cancer
 from sklearn.preprocessing import StandardScaler
 import numpy as np
+from sklearn.feature_selection import f_classif
 
-# Load dataset
+# Load and prepare data
 data = load_breast_cancer()
 X = StandardScaler().fit_transform(data.data)
-
-# Compute correlation matrix
 correlation = np.corrcoef(X.T)
 
-# Define weights (e.g., univariate statistical tests)
-from sklearn.feature_selection import f_classif
+# Define feature weights
 f_stats, _ = f_classif(X, data.target)
-weights = f_stats / f_stats.sum()  # Normalise
+weights = f_stats / f_stats.sum()
 
-# Find minimally correlated, maximally informative features
-bam = pf.BinaryAcceptance(correlation, weights=weights, threshold=0.7)
-index_map = bam.sort_bam_by_weight()
+# Find best feature combinations (one function call!)
+results = pf.find_best_combinations(
+    matrix=correlation,
+    weights=weights,
+    threshold=0.7,
+    top=10
+)
 
-whdfs = pf.WHDFS(bam, top=10, allow_subset=False)
-whdfs.find_paths()
-results = whdfs.remap_path(index_map)
-
-print(f"Top 10 feature combinations:")
+# Print results
+print("Top 10 feature combinations:")
 for i, (path, weight) in enumerate(zip(results.get_paths, results.get_weights), 1):
+    feature_names = [data.feature_names[j] for j in path]
+    print(f"{i}. {feature_names} (weight: {weight:.3f})")
+```
+
+### Example 1b: Feature Selection (Advanced Control)
+
+```python
+import pathfinder as pf
+from sklearn.datasets import load_breast_cancer
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+from sklearn.feature_selection import f_classif
+
+# Load and prepare data
+data = load_breast_cancer()
+X = StandardScaler().fit_transform(data.data)
+correlation = np.corrcoef(X.T)
+
+# Define feature weights
+f_stats, _ = f_classif(X, data.target)
+weights = f_stats / f_stats.sum()
+
+# Create BAM and search (automatic sorting and remapping)
+bam = pf.BinaryAcceptance(correlation, weights=weights, threshold=0.7)
+whdfs = pf.WHDFS(bam, top=10, allow_subset=False)  # auto_sort=True by default
+whdfs.find_paths()
+
+# Results are automatically in original index space
+print("Top 10 feature combinations:")
+for i, (path, weight) in enumerate(zip(whdfs.get_paths, whdfs.get_weights), 1):
     feature_names = [data.feature_names[j] for j in path]
     print(f"{i}. {feature_names} (weight: {weight:.3f})")
 ```
@@ -202,15 +231,13 @@ overlap_matrix = (overlap_matrix + overlap_matrix.T) / 2
 expected_significance = np.random.exponential(2.0, n_regions)
 
 # Find non-overlapping regions maximising combined significance
-bam = pf.BinaryAcceptance(overlap_matrix, 
-                           weights=expected_significance, 
-                           threshold=0.1)  # Max 10% overlap
-index_map = bam.sort_bam_by_weight()
-
-# Find best combinations
-whdfs = pf.WHDFS(bam, top=5)
-whdfs.find_paths(runs=10)  # Only search from top 10 regions
-results = whdfs.remap_path(index_map)
+results = pf.find_best_combinations(
+    matrix=overlap_matrix,
+    weights=expected_significance,
+    threshold=0.1,  # Max 10% overlap
+    top=5,
+    runs=10  # Only search from top 10 regions
+)
 
 print(f"Optimal signal regions: {results.get_paths[0]}")
 print(f"Combined significance: {results.get_weights[0]:.2f}σ")
@@ -219,21 +246,53 @@ print(f"Combined significance: {results.get_weights[0]:.2f}σ")
 ### Example 3: Visualisation
 
 ```python
+import pathfinder as pf
 from pathfinder import plot_results
 import matplotlib.pyplot as plt
 
 # Create and solve problem
 bam = pf.BinaryAcceptance(correlation_matrix, weights=weights, threshold=0.5)
-whdfs = pf.WHDFS(bam, top=5)
+whdfs = pf.WHDFS(bam, top=5)  # Automatic sorting for optimal performance
 whdfs.find_paths()
 
-# Plot BAM with overlaid results
+# Plot BAM with overlaid results (note: plot shows sorted indices)
 fig, ax = plot_results.plot(bam, whdfs, size=12)
 plt.savefig('pathfinder_results.png', dpi=300, bbox_inches='tight')
 plt.show()
+
+# Access results in original index space
+print(f"Best path (original indices): {whdfs.get_paths[0]}")
 ```
 
 ## API Reference
+
+### High-Level Functions
+
+#### `find_best_combinations`
+
+Convenience function for the complete PathFinder workflow.
+
+```python
+find_best_combinations(matrix, weights=None, threshold=None, top=10,
+                      allow_subset=False, runs=None, labels=None,
+                      algorithm='whdfs', verbose=False)
+```
+
+**Parameters:**
+- `matrix`: Square 2D array of pairwise relations (boolean or float)
+- `weights`: Optional array of feature weights (default: uniform)
+- `threshold`: Required for float matrices - values below threshold are compatible
+- `top`: Number of top results to return (default: 10)
+- `allow_subset`: Allow paths that are subsets of longer paths (default: False)
+- `runs`: Number of source nodes to search from (default: all)
+- `labels`: Optional feature labels
+- `algorithm`: 'whdfs' (default, faster) or 'hdfs' (exhaustive)
+- `verbose`: Print results to console (default: False)
+
+**Returns:**
+- `Results`: Results object with automatically remapped paths
+
+**Note:** This function automatically handles sorting and remapping, returning results in the original index space.
 
 ### Core Classes
 
@@ -279,13 +338,29 @@ HDFS(binary_acceptance_obj, top=10, allow_subset=False)
 
 #### `WHDFS` (Weighted Hereditary Depth-First Search)
 
-Optimised search for weighted objectives.
+Optimised search for weighted objectives with automatic sorting.
 
 ```python
-WHDFS(binary_acceptance_obj, top=10, allow_subset=False)
+WHDFS(binary_acceptance_obj, top=10, allow_subset=False, auto_sort=True)
 ```
 
-Same interface as HDFS, but with early termination optimisation.
+**Parameters:**
+- `binary_acceptance_obj`: BinaryAcceptance instance
+- `top`: Number of top results to retain
+- `allow_subset`: If False, exclude paths that are subsets of longer paths
+- `auto_sort`: Automatically sort by weights for optimal performance (default: True)
+
+**Key Features:**
+- Automatic weight-based sorting when `auto_sort=True` (default)
+- Results accessed via `get_paths` and `get_weights` are automatically remapped to original indices
+- Up to 1000× faster than HDFS for typical problems
+- Emits performance warning if `auto_sort=False` with non-uniform weights
+
+**Key Methods:**
+- `find_paths(runs=None, source_node=0, verbose=False)`: Execute search
+  - `runs`: Number of source nodes to search from (default: all)
+  - `source_node`: Starting source node index
+  - `verbose`: Print results
 
 #### `Results`
 
@@ -293,12 +368,16 @@ Container for path/weight pairs with sorting and filtering.
 
 **Properties:**
 - `get_paths`: List of paths (sorted lists of indices)
+  - For `WHDFS` with `auto_sort=True`: automatically remapped to original indices
+  - For `HDFS` or manual sorting: requires `remap_path()` call
 - `get_weights`: Corresponding weights
 - `best`: Highest-weighted Result
 - `top`: Number of results to retain (settable)
 
 **Methods:**
 - `remap_path(index_map, weight_offset=0.0)`: Convert to original indices
+  - Not needed for `WHDFS` with `auto_sort=True` (automatic)
+  - Required for `HDFS` or when using manual `sort_bam_by_weight()`
 - `to_dict()` / `from_dict()`: Serialisation
 - `to_json()` / `from_json()`: JSON I/O
 
@@ -346,19 +425,35 @@ Enable `allow_subset=True` when:
 
 ### Performance Tips
 
-1. **Always sort by weights** when using WHDFS:
+1. **Use `WHDFS` with default settings** (automatic sorting enabled):
    ```python
-   index_map = bam.sort_bam_by_weight()
+   whdfs = pf.WHDFS(bam, top=10)  # auto_sort=True by default
+   ```
+   This provides up to 1000× speedup over HDFS and handles index remapping automatically.
+
+2. **Or use the convenience function** for simplest workflow:
+   ```python
+   results = pf.find_best_combinations(matrix, weights, threshold=0.7, top=10)
    ```
 
-2. **Limit source nodes** for large problems:
+3. **Limit source nodes** for large problems:
    ```python
    whdfs.find_paths(runs=10)  # Only search from top 10 features
    ```
+   Typically, optimal paths are found in the first 10 high-weight nodes.
 
-3. **Choose appropriate threshold**: Lower threshold (stricter compatibility) → faster search
+4. **Choose appropriate threshold**: Lower threshold (stricter compatibility) → faster search
 
-4. **Use WHDFS over HDFS** when you only need top results
+5. **Use WHDFS over HDFS** when you only need top results (not exhaustive enumeration)
+
+6. **Advanced: Manual control** (if you need to disable auto-sort):
+   ```python
+   bam = pf.BinaryAcceptance(matrix, weights=weights)
+   index_map = bam.sort_bam_by_weight()
+   whdfs = pf.WHDFS(bam, top=10, auto_sort=False)
+   whdfs.find_paths()
+   results = whdfs.remap_path(index_map)
+   ```
 
 ## Testing
 
