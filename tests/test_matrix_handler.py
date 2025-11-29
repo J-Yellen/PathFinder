@@ -5,7 +5,7 @@ import pytest
 np.random.seed(1)
 
 
-def get_basic_data(ret_dtype: object = bool):
+def get_basic_data(ret_dtype: type = bool):
     matrix = [[0, 1, 1, 0],
               [1, 0, 1, 0],
               [1, 1, 0, 1],
@@ -53,7 +53,7 @@ def test_reset_source():
 def test_graph():
     matrix = get_basic_data(ret_dtype=bool)
     weights = np.ones(len(matrix))
-    edges = [(*ij, weights[ij[1]]) for ij in np.argwhere(np.triu(matrix, 1))]
+    edges = [(ij[0], ij[1], float(weights[ij[1]])) for ij in np.argwhere(np.triu(matrix, 1))]
     graph = Graph()
     graph.add_weighted_edges(edges)
     assert graph.edges() == [(0, 1), (0, 2), (1, 2), (2, 3)]

@@ -21,17 +21,21 @@ def pseudo_weights(N=25, sort=True) -> np.ndarray:
 
 
 def test_format_path():
-    result = Results.from_dict({0: {'path': [0, 1, 2], 'weights': 2}})
-    x, y = plot_results.format_path(result.get_paths[0])
-    assert len(x) == 4 & len(y) == 4
-    assert x == [[0, 0], [0, 1], [1, 1], [1, 2]]
-    assert y == [[0, 1], [1, 1], [1, 2], [2, 2]]
+    result = Results.from_dict({0: {'path': [0, 1, 2], 'weight': 2}})
+    formatted = plot_results.format_path(result.get_paths[0])
+    x, y = formatted[0], formatted[1]
+    assert len(x) == 4 and len(y) == 4
+    expected_x = [[0, 0], [0, 1], [1, 1], [1, 2]]
+    expected_y = [[0, 1], [1, 1], [1, 2], [2, 2]]
+    assert np.array_equal(x, expected_x)
+    assert np.array_equal(y, expected_y)
 
 
 def test_make_path():
-    result = Results.from_dict({0: {'path': [0, 1, 2], 'weights': 2}})
+    result = Results.from_dict({0: {'path': [0, 1, 2], 'weight': 2}})
     figure_data = plot_results.make_path([result.get_paths[0]])[0]
     assert isinstance(figure_data, dict)
+    assert 'x' in figure_data and 'y' in figure_data and 'color' in figure_data
     assert figure_data['x'] == [0, 0, 0, 1, 1, 1, 1, 2]
     assert figure_data['y'] == [0, 1, 1, 1, 1, 2, 2, 2]
 
@@ -44,6 +48,8 @@ def test_plot():
     weights = pseudo_weights(N, sort=False)
     bam = BinaryAcceptance(pseudo, weights=weights)
     _ = bam.sort_bam_by_weight()
-    fig, axis = plot_results.plot(bam, result, size=12)
+    result_plot = plot_results.plot(bam, result, size=12)
+    assert result_plot is not None
+    fig, axis = result_plot
     assert isinstance(fig, figure.Figure)
     assert isinstance(axis, axes.Axes)
