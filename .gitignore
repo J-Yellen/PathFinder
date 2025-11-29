@@ -82,6 +82,7 @@ venv.bak/
 
 # CI version file
 full_version.txt
+_version.py
 
 # mypy
 .mypy_cache/
