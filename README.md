@@ -114,7 +114,7 @@ $$
 
 The fraction of allowed combinations is:
 
-$$f_A = \frac{2}{n(n-1)} \sum_{i < j} B_{ij}$$
+$$f_{A} = \frac{2}{n \cdot (n-1)} \sum_{i < j} B_{ij}$$
 
 ### Algorithms
 
