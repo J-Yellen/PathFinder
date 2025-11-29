@@ -122,15 +122,39 @@ class HDFS(Results):
 
 class WHDFS(Results):
 
-    def __init__(self, binary_acceptance_obj: BinaryAcceptance, top: int = 10, allow_subset: bool = False) -> None:
+    def __init__(self, binary_acceptance_obj: BinaryAcceptance, top: int = 10,
+                 allow_subset: bool = False, auto_sort: bool = True) -> None:
         """
         Weighted Hereditary Depth First Search
+
+        Arguments:
+            binary_acceptance_obj (BinaryAcceptance): BinaryAcceptance Object
+            top (int, optional): Number of top results to retain. Defaults to 10.
+            allow_subset (bool, optional): Allow paths that are subsets of other paths. Defaults to False.
+            auto_sort (bool, optional): Automatically sort BAM by weights for optimal performance. Defaults to True.
         """
         if not allow_subset and min(binary_acceptance_obj.weights) < 0:
             raise Exception('WARNING! Negative weights provided. Subset exclusion cannot be guarantied!')
         super(WHDFS, self).__init__(top=top, allow_subset=allow_subset)
 
         self.bam = binary_acceptance_obj
+        self._index_map = None
+        self._auto_sort = auto_sort
+
+        # Auto-sort for optimal performance
+        if auto_sort:
+            self._index_map = self.bam.sort_bam_by_weight()
+        else:
+            # Warn if weights are not uniform (performance will suffer)
+            weights = self.bam.weights
+            if len(set(weights)) > 1:  # Non-uniform weights
+                import warnings
+                warnings.warn(
+                    "WHDFS performance is significantly degraded without weight-based sorting. "
+                    "Consider using auto_sort=True (default) for up to 1000× speedup.",
+                    UserWarning
+                )
+
         self.weight_func = self.bam.get_weight
         self.wlimit_func = self.bam.get_weight
         self.top_weight = self._top_weights_default
@@ -252,3 +276,16 @@ class WHDFS(Results):
         self.bam.reset_source()
         if verbose:
             print(self)
+
+    @property
+    def get_paths(self) -> List[List[int]]:
+        """Get paths with automatic remapping to original indices if auto_sort was used."""
+        if self._index_map is not None:
+            remapped = self.remap_path(self._index_map)
+            return remapped.get_paths
+        return super().get_paths
+
+    @property
+    def get_weights(self) -> List[float]:
+        """Get weights (unchanged by remapping)."""
+        return super().get_weights
