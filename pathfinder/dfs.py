@@ -9,7 +9,7 @@ from itertools import islice
 import numpy as np
 from .matrix_handler import BinaryAcceptance
 from .result import Results
-from typing import Iterable, Iterator, Optional, Tuple, Callable
+from typing import Iterable, Iterator, List, Optional, Callable
 
 
 class HDFS(Results):
@@ -18,7 +18,7 @@ class HDFS(Results):
                  allow_subset: bool = False) -> None:
         """
             Hereditary Depth First Search Class
-        Args:
+        Arguments:
             binary_acceptance_obj (BinaryAcceptance): BinaryAcceptance Object containing
             top (int, optional): _description_. Defaults to 10.
             allow_subset (bool, optional): _description_. Defaults to True.
@@ -30,10 +30,14 @@ class HDFS(Results):
         self.weight_func = self.bam.get_weight
         self.n_iteration = 0
 
-    def hdfs(self, trim: bool = True, ignore_child: Optional[list] = None) -> Iterator:
+    def hdfs(self, trim: bool = True, ignore_child: Optional[List] = None) -> Iterator:
         """
-        Hereditary Depth First Search
-        Returns all paths under the Hereditary condition.
+        Hereditary Depth First Search. Yields all paths from source to target node
+        Arguments:
+            trim (bool, optional): If True, yield paths without the target node. Defaults to True.
+            ignore_child (Optional[List], optional): List of child nodes to ignore. Defaults to None.
+        Yields:
+            Iterator: Yields paths as lists of node indices.
         """
         if ignore_child is None:
             ignore_child = []
@@ -76,13 +80,19 @@ class HDFS(Results):
 
     @staticmethod
     def chunked(iterable: Iterable, n: int) -> Iterator:
-        """Break *iterable* into lists of length *n*: """
+        """Break *iterable* into lists of length *n*:
+         Arguments:
+             iterable (Iterable): The iterable to be chunked.
+             n (int): The size of each chunk.
+         Returns:
+             Iterator: An iterator over chunks of the iterable.
+         """
         def take(n, iterable):
             return list(islice(iterable, n))
         return iter(partial(take, n, iter(iterable)), [])
 
     def find_paths(self, runs: Optional[int] = None, source_node: int = 0,
-                   ignore_child: Optional[Tuple[list, int]] = None, verbose: bool = False) -> None:
+                   ignore_child: Optional[List] = None, verbose: bool = False) -> None:
         """
         Evaluate the available paths/subsets
         runs : number of initial nodes starting from 0
@@ -122,13 +132,12 @@ class WHDFS(Results):
 
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
-        # self.wlimit_func = self.bam.get_weight
-        self.wlimit_func = self.weight_func
+        self.wlimit_func = self.bam.get_weight
         self.top_weight = self._top_weights_default
         self.n_iteration = 0
 
     @property
-    def weight_func(self) -> float:
+    def weight_func(self) -> Callable:
         return self._weight_func
 
     @weight_func.setter
@@ -136,7 +145,7 @@ class WHDFS(Results):
         self._weight_func = weight_function
 
     @property
-    def wlimit_func(self) -> float:
+    def wlimit_func(self) -> Callable:
         return self._wlimit_func
 
     @wlimit_func.setter
@@ -144,7 +153,7 @@ class WHDFS(Results):
         self._wlimit_func = weight_function
 
     def top_weight(self) -> float:
-        return self._top_weights
+        return self._top_weights()
 
     def set_top_weight(self, weight_function: Callable) -> None:
         self._top_weights = weight_function
