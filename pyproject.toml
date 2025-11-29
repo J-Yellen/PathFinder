@@ -1,11 +1,11 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pathfinder"
-version = "0.0.0"
-description = "Tools for finding the optimum combination of features given pairwise relations and weights"
+dynamic = ["version"]
+description = "Tools for finding the optimal combination of features given pairwise relations and weights"
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [
@@ -48,3 +48,6 @@ source = ["pathfinder"]
 [tool.coverage.report]
 fail_under = 60
 show_missing = true
+
+[tool.setuptools_scm]
+version_file = "pathfinder/_version.py"
