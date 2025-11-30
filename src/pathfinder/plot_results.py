@@ -141,7 +141,13 @@ def make_path(
     return ret
 
 
-def add_results(ax: Axes, res: Results, lim: int) -> None:
+def add_results(
+        ax: Axes,
+        res: Results,
+        lim: int,
+        plot_sorted: bool = False,
+        bam: Optional[BinaryAcceptance] = None
+) -> None:
     """
     Plot result paths on the axes.
 
@@ -149,14 +155,32 @@ def add_results(ax: Axes, res: Results, lim: int) -> None:
         ax: Matplotlib axes object to plot on.
         res: Results object containing paths to visualise.
         lim: Maximum number of paths to plot.
+        plot_sorted: If True, plot paths in sorted index space. If False, plot in original space.
+        bam: BinaryAcceptance object (unused, kept for API compatibility).
 
     Returns:
         None
     """
-    # For WHDFS with auto_sort, use sorted paths to match the sorted BAM
-    if isinstance(res, WHDFS) and hasattr(res, 'get_sorted_paths'):
-        paths_to_plot = res.get_sorted_paths()[:lim:]
+    # Import here to avoid circular import
+    from pathfinder.dfs import HDFS
+
+    # Use sorted paths when plot_sorted=True
+    if plot_sorted:
+        if isinstance(res, WHDFS) and hasattr(res, 'get_sorted_paths'):
+            paths_to_plot = res.get_sorted_paths()[:lim:]
+        elif isinstance(res, (HDFS, WHDFS)):
+            # For HDFS or WHDFS, get paths and remap to sorted space if index_map exists
+            if res.bam._index_map is not None:
+                # Create reverse mapping (original -> sorted)
+                reverse_map = {v: k for k, v in enumerate(res.bam._index_map)}
+                paths_to_plot = [sorted([reverse_map[i] for i in path]) for path in res.get_paths[:lim:]]
+            else:
+                paths_to_plot = res.get_paths[:lim:]
+        else:
+            # Plain Results object - just use get_paths
+            paths_to_plot = res.get_paths[:lim:]
     else:
+        # Default: plot in original index space for both HDFS and WHDFS
         paths_to_plot = res.get_paths[:lim:]
 
     for i, item in make_path(paths_to_plot, shift=True).items():
@@ -200,7 +224,7 @@ def add_sink_data(
 
 def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional[int] = None,
          size: int = 16, xy_labels: Optional[List[str]] = None,
-         ax: Optional[Axes] = None, show_sink: bool = False) -> Tuple[Figure, Axes]:
+         ax: Optional[Axes] = None, show_sink: bool = False, plot_sorted: bool = False) -> Tuple[Figure, Axes]:
     """
     Visualise Binary Acceptance Matrix with optional result paths overlaid.
 
@@ -218,6 +242,8 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
         xy_labels: Optional labels for axes. If None, no labels shown.
         ax: Optional existing Axes to plot on. If None, creates new figure.
         show_sink: If True, extends matrix to show dummy sink/target node. Default False.
+        plot_sorted: If True, plot paths in sorted index space (weight-ordered).
+                     If False (default), plot in original index space for visual comparison.
 
     Returns:
         Tuple of (Figure, Axes). If ax was provided, Figure is retrieved from the axes.
@@ -226,6 +252,8 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
         >>> bam = BinaryAcceptance(matrix, weights=weights, threshold=0.5)
         >>> results = HDFS(bam, top=5).find_paths()
         >>> fig, ax = plot(bam, results, size=12)
+        >>> # For weight-ordered visualization:
+        >>> fig, ax = plot(bam, results, plot_sorted=True)
     """
     cmap = ListedColormap(['k', 'darkgrey', 'lightgrey', 'w'], name='bwg')
     if show_sink and results is not None:
@@ -233,6 +261,16 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
     else:
         dat = np.array(bam.bin_acc, dtype=float, copy=True)
         result = copy(results)
+
+    # If plot_sorted=False and BAM has been sorted, we need to UNSORT it for display
+    # so paths (which are in original indices) align correctly with the matrix
+    if not plot_sorted and bam._index_map is not None:
+        # Create reverse mapping to unsort the matrix
+        reverse_indices = np.argsort(bam._index_map)
+        dat = dat[reverse_indices, :][:, reverse_indices]
+        # Also unsort labels if they exist
+        if xy_labels is not None:
+            xy_labels = [xy_labels[i] for i in reverse_indices]
 
     dat[np.diag_indices(dat.shape[0])] = 0.3
     dat[np.triu_indices(dat.shape[0], k=1)] = 0.6
@@ -247,8 +285,8 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
     axis.imshow(dat, cmap=cmap)
     if xy_labels is not None:
         x_ = list(range(len(dat)))
-        axis.set_xticks(x_, labels=xy_labels)
-        axis.set_yticks(x_, labels=xy_labels)
+        axis.set_xticks(x_, labels=xy_labels, rotation='vertical' if xy_labels is not None else 45)
+        axis.set_yticks(x_, labels=xy_labels, rotation='horizontal')
         axis.tick_params(axis='both', labelsize='large')
     else:
         axis.set_xticks([])
@@ -257,7 +295,7 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
     set_legend(axis)
     if result:
         if top is None:
-            top = result._top
-        add_results(axis, result, lim=top)
+            top = result._top if result._top is not None else len(result.get_paths)
+        add_results(axis, result, lim=top, plot_sorted=plot_sorted, bam=bam)
 
     return fig, axis
