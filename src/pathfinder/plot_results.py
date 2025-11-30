@@ -223,8 +223,9 @@ def add_sink_data(
 
 
 def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional[int] = None,
-         size: int = 16, xy_labels: Optional[List[str]] = None,
-         ax: Optional[Axes] = None, show_sink: bool = False, plot_sorted: bool = False) -> Tuple[Figure, Axes]:
+         size: int = 16, axis_labels: bool = True, xy_labels: Optional[List[str]] = None,
+         ax: Optional[Axes] = None, show_sink: bool = False, plot_sorted: bool = False,
+         highlight_top_path: bool = False) -> Tuple[Figure, Axes]:
     """
     Visualise Binary Acceptance Matrix with optional result paths overlaid.
 
@@ -239,11 +240,16 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
         results: Optional Results object containing paths to overlay on the plot.
         top: Maximum number of result paths to display. If None, uses results._top.
         size: Figure width in inches. Height is size/1.5. Default is 16.
-        xy_labels: Optional labels for axes. If None, no labels shown.
+        axis_labels: If True, use labels from BinaryAcceptance object (respects sorting order).
+                    Ignored if xy_labels is provided. Default True.
+        xy_labels: Optional labels for axes. If provided, overrides axis_labels. If None
+                   and axis_labels=False, no labels shown.
         ax: Optional existing Axes to plot on. If None, creates new figure.
         show_sink: If True, extends matrix to show dummy sink/target node. Default False.
         plot_sorted: If True, plot paths in sorted index space (weight-ordered).
                      If False (default), plot in original index space for visual comparison.
+        highlight_top_path: If True, highlight rows/columns corresponding to the best path.
+                            Default False.
 
     Returns:
         Tuple of (Figure, Axes). If ax was provided, Figure is retrieved from the axes.
@@ -252,10 +258,19 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
         >>> bam = BinaryAcceptance(matrix, weights=weights, threshold=0.5)
         >>> results = HDFS(bam, top=5).find_paths()
         >>> fig, ax = plot(bam, results, size=12)
+        >>> # Using labels from BinaryAcceptance object:
+        >>> fig, ax = plot(bam, results, axis_labels=True)
         >>> # For weight-ordered visualization:
         >>> fig, ax = plot(bam, results, plot_sorted=True)
+        >>> # With top path highlighting:
+        >>> fig, ax = plot(bam, results, highlight_top_path=True)
     """
     cmap = ListedColormap(['k', 'darkgrey', 'lightgrey', 'w'], name='bwg')
+
+    # Handle label selection: xy_labels overrides axis_labels
+    if xy_labels is None and axis_labels and bam.labels is not None:
+        xy_labels = copy(bam.labels)
+
     if show_sink and results is not None:
         dat, result, xy_labels = add_sink_data(bam, results, copy(xy_labels))
     else:
@@ -283,11 +298,48 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
         fig = cast(Figure, axis.get_figure())
 
     axis.imshow(dat, cmap=cmap)
+
+    # Calculate top_path if highlighting is requested
+    top_path = None
+    if highlight_top_path and result and len(result.get_paths) > 0:
+        # Get the top path in the correct index space for the displayed matrix
+        if plot_sorted:
+            # If plotting in sorted space, get sorted paths
+            if isinstance(result, WHDFS) and hasattr(result, 'get_sorted_paths'):
+                top_path = result.get_sorted_paths()[0]
+            elif bam._index_map is not None:
+                # Map to sorted space
+                reverse_map = {v: k for k, v in enumerate(bam._index_map)}
+                top_path = sorted([reverse_map[i] for i in result.get_paths[0]])
+            else:
+                top_path = result.get_paths[0]
+        else:
+            # Use original space paths
+            top_path = result.get_paths[0]
+
+        # Draw semi-transparent rectangles to highlight rows (up to and including diagonal)
+        for idx in top_path:
+            # Highlight row from start through the diagonal box (lower triangle + diagonal)
+            axis.axhspan(idx - 0.5, idx + 0.5, xmin=0.0,
+                         xmax=(idx + 1.0) / dat.shape[0], alpha=0.4, color='green', zorder=1)
+
     if xy_labels is not None:
         x_ = list(range(len(dat)))
-        axis.set_xticks(x_, labels=xy_labels, rotation='vertical' if xy_labels is not None else 45)
+        axis.set_xticks(x_, labels=xy_labels, rotation='vertical')
         axis.set_yticks(x_, labels=xy_labels, rotation='horizontal')
         axis.tick_params(axis='both', labelsize='large')
+
+        # Color labels in top path dark green if highlighting is enabled
+        if top_path is not None:
+            # Set color for highlighted labels
+            for label in axis.get_xticklabels():
+                if int(label.get_position()[0]) in top_path:
+                    label.set_color('darkgreen')
+                    label.set_fontweight('bold')
+            for label in axis.get_yticklabels():
+                if int(label.get_position()[1]) in top_path:
+                    label.set_color('darkgreen')
+                    label.set_fontweight('bold')
     else:
         axis.set_xticks([])
         axis.set_yticks([])
