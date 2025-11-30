@@ -15,7 +15,7 @@ from matplotlib.patches import Rectangle
 from matplotlib import font_manager
 from .matrix_handler import BinaryAcceptance
 from .result import Results
-from .dfs import WHDFS
+from .dfs import WHDFS, HDFS
 from typing import Optional, Tuple, List, Union, Set, Dict, Sequence, cast
 
 import logging
@@ -222,8 +222,8 @@ def add_sink_data(
     return dat, result, xy_labels
 
 
-def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional[int] = None,
-         size: int = 16, axis_labels: bool = True, xy_labels: Optional[List[str]] = None,
+def plot(bam: Optional[BinaryAcceptance] = None, results: Optional[Union[WHDFS, HDFS, Results]] = None,
+         top: Optional[int] = None, size: int = 16, axis_labels: bool = True, xy_labels: Optional[List[str]] = None,
          ax: Optional[Axes] = None, show_sink: bool = False, plot_sorted: bool = False,
          highlight_top_path: bool = False) -> Tuple[Figure, Axes]:
     """
@@ -236,8 +236,10 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
     - Coloured lines show result paths
 
     Args:
-        bam: BinaryAcceptance object containing the matrix to visualise.
+        bam: BinaryAcceptance object containing the matrix to visualise. If None and
+             results is an HDFS/WHDFS object, extracts BAM from results.bam.
         results: Optional Results object containing paths to overlay on the plot.
+                 Can be HDFS, WHDFS, or Results object.
         top: Maximum number of result paths to display. If None, uses results._top.
         size: Figure width in inches. Height is size/1.5. Default is 16.
         axis_labels: If True, use labels from BinaryAcceptance object (respects sorting order).
@@ -255,16 +257,39 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
         Tuple of (Figure, Axes). If ax was provided, Figure is retrieved from the axes.
 
     Example:
-        >>> bam = BinaryAcceptance(matrix, weights=weights, threshold=0.5)
-        >>> results = HDFS(bam, top=5).find_paths()
+        >>> # Simplest usage - just pass results object
+        >>> whdfs = WHDFS(bam, top=5)
+        >>> whdfs.find_paths()
+        >>> fig, ax = plot(whdfs, highlight_top_path=True)
+        >>>
+        >>> # Or explicitly provide both
         >>> fig, ax = plot(bam, results, size=12)
+        >>>
         >>> # Using labels from BinaryAcceptance object:
-        >>> fig, ax = plot(bam, results, axis_labels=True)
-        >>> # For weight-ordered visualization:
+        >>> fig, ax = plot(results, axis_labels=True)
+        >>>
+        >>> # For weight-ordered visualisation:
         >>> fig, ax = plot(bam, results, plot_sorted=True)
-        >>> # With top path highlighting:
-        >>> fig, ax = plot(bam, results, highlight_top_path=True)
     """
+    # Handle flexible parameter order: if bam looks like Results, swap parameters
+    if bam is not None and hasattr(bam, 'bam') and not isinstance(bam, BinaryAcceptance):
+        # User passed Results as first arg, swap to results parameter
+        if results is None:
+            results = bam  # type: ignore[assignment]
+            bam = results.bam  # type: ignore[attr-defined]
+        else:
+            raise ValueError("Ambiguous parameters: bam appears to be a Results object but results is also provided")
+
+    # Extract BAM from results if not provided
+    if bam is None and results is not None:
+        if hasattr(results, 'bam'):
+            bam = results.bam  # type: ignore[attr-defined]
+        else:
+            raise ValueError("bam parameter is required when results object has no 'bam' attribute")
+
+    if bam is None:
+        raise ValueError("Either bam parameter or results with bam attribute must be provided")
+
     cmap = ListedColormap(['k', 'darkgrey', 'lightgrey', 'w'], name='bwg')
 
     # Handle label selection: xy_labels overrides axis_labels

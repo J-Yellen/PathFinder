@@ -9,7 +9,7 @@
 from .matrix_handler import BinaryAcceptance
 from .dfs import HDFS, WHDFS
 from .result import Results
-from typing import Optional
+from typing import Union
 import numpy as np
 
 try:
@@ -29,7 +29,7 @@ __all__ = [
 
 def find_best_combinations(matrix, weights=None, threshold=None, top=10,
                            allow_subset=False, runs=None, labels=None,
-                           algorithm='whdfs', verbose=False):
+                           algorithm='whdfs', verbose=False) -> Union[HDFS, WHDFS]:
     """
     High-level convenience function to find optimal feature combinations.
 

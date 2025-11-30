@@ -277,3 +277,46 @@ def test_axis_labels_parameter():
         fig3, ax3 = plot_results.plot(bam, whdfs, axis_labels=False, size=8)
         assert fig3 is not None
         assert ax3 is not None
+
+
+def test_plot_with_results_only():
+    """Test plot() can extract BAM from WHDFS/HDFS objects"""
+    # Create test data
+    N = 6
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+
+    # Create WHDFS with BAM
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05)
+    whdfs = WHDFS(bam, top=3, allow_subset=False, auto_sort=True)
+    whdfs.find_paths()
+
+    # Test simplified API - just pass results object
+    fig1, ax1 = plot_results.plot(results=whdfs, size=8)
+    assert fig1 is not None
+    assert ax1 is not None
+
+    # Test with optional parameters
+    fig2, ax2 = plot_results.plot(results=whdfs, highlight_top_path=True, size=8)
+    assert fig2 is not None
+    assert ax2 is not None
+
+    # Test that explicit bam still works (backward compatibility)
+    fig3, ax3 = plot_results.plot(bam=bam, results=whdfs, size=8)
+    assert fig3 is not None
+    assert ax3 is not None
+
+
+def test_plot_requires_bam():
+    """Test plot() raises appropriate error when BAM cannot be extracted"""
+    # Create Results object without bam attribute
+    results = Results(top=5)
+
+    # Should raise ValueError when bam is None and results has no bam
+    import pytest
+    with pytest.raises(ValueError, match="bam parameter is required"):
+        plot_results.plot(results=results)
+
+    # Should also raise when both are None
+    with pytest.raises(ValueError, match="Either bam parameter or results with bam attribute"):
+        plot_results.plot()
