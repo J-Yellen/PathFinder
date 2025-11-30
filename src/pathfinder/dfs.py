@@ -7,9 +7,10 @@
 from functools import partial
 from itertools import islice
 import numpy as np
+from numpy import ndarray
 from .matrix_handler import BinaryAcceptance
 from .result import Results
-from typing import Iterable, Iterator, List, Optional, Callable
+from typing import Iterable, Iterator, List, Optional, Callable, Union, Dict
 
 
 class HDFS(Results):
@@ -119,6 +120,23 @@ class HDFS(Results):
         if verbose:
             print(self)
 
+    def remap_path(self, index_map: Optional[Union[Dict, List, ndarray]] = None,
+                   weight_offset: float = 0.0) -> 'Results':
+        """
+        Remap paths to original indices. If index_map is not provided,
+        uses the index_map stored in self.bam (if available).
+
+        Args:
+            index_map: Optional index mapping. If None, uses self.bam._index_map.
+            weight_offset: Optional weight offset to subtract (per path element).
+
+        Returns:
+            Results object with remapped paths.
+        """
+        if index_map is None:
+            index_map = self.bam._index_map
+        return super().remap_path(index_map, weight_offset)
+
 
 class WHDFS(Results):
 
@@ -138,12 +156,10 @@ class WHDFS(Results):
         super(WHDFS, self).__init__(top=top, allow_subset=allow_subset)
 
         self.bam = binary_acceptance_obj
-        self._index_map = None
-        self._auto_sort = auto_sort
 
         # Auto-sort for optimal performance
         if auto_sort:
-            self._index_map = self.bam.sort_bam_by_weight()
+            self.bam.sort_bam_by_weight()
         else:
             # Warn if weights are not uniform (performance will suffer)
             weights = self.bam.weights
@@ -280,8 +296,8 @@ class WHDFS(Results):
     @property
     def get_paths(self) -> List[List[int]]:
         """Get paths with automatic remapping to original indices if auto_sort was used."""
-        if self._index_map is not None:
-            remapped = self.remap_path(self._index_map)
+        if self.bam._index_map is not None:
+            remapped = self.remap_path(self.bam._index_map)
             return remapped.get_paths
         return super().get_paths
 
@@ -289,3 +305,32 @@ class WHDFS(Results):
     def get_weights(self) -> List[float]:
         """Get weights (unchanged by remapping)."""
         return super().get_weights
+
+    def get_sorted_paths(self) -> List[List[int]]:
+        """
+        Get paths in sorted index space (as stored internally).
+
+        Use this when you need paths that match the sorted BAM matrix,
+        e.g., for plotting or debugging.
+
+        Returns:
+            List of paths in sorted index space (before remapping).
+        """
+        return super().get_paths
+
+    def remap_path(self, index_map: Optional[Union[Dict, List, ndarray]] = None,
+                   weight_offset: float = 0.0) -> 'Results':
+        """
+        Remap paths to original indices. If index_map is not provided,
+        uses the index_map stored in self.bam (if available).
+
+        Args:
+            index_map: Optional index mapping. If None, uses self.bam._index_map.
+            weight_offset: Optional weight offset to subtract (per path element).
+
+        Returns:
+            Results object with remapped paths.
+        """
+        if index_map is None:
+            index_map = self.bam._index_map
+        return super().remap_path(index_map, weight_offset)

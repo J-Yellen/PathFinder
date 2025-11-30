@@ -77,23 +77,23 @@ class Graph():
             self._node = {}
         self._construct_adj(edges)
 
-    def edges(self, srce: Optional[int] = None) -> List[Tuple[int, int]]:
+    def edges(self, source: Optional[int] = None) -> List[Tuple[int, int]]:
         """
         Get edges from specified source node or all edges if source is None.
 
         Args:
-            srce: Source node index. If None, returns all edges in graph.
+            source: Source node index. If None, returns all edges in graph.
                   If list, uses first element.
 
         Returns:
             List of tuples (source, target) representing edges.
         """
-        if isinstance(srce, list):
-            srce = srce[0]
-        if srce is None:
+        if isinstance(source, list):
+            source = source[0]
+        if source is None:
             return [(k, i) for k, subdict in self._adj.items() for i in subdict]
-        if srce in self._adj:
-            return [(srce, i) for i in self._adj[srce]]
+        if source in self._adj:
+            return [(source, i) for i in self._adj[source]]
         return []
 
 
@@ -148,6 +148,7 @@ class BinaryAcceptance(Graph):
         self.bin_acc = self.set_binary_acceptance(matrix, threshold)
         self.weights = self.set_weights(weights, self.dim)
         self.labels = labels
+        self._index_map = None  # Stores index mapping if sort_bam_by_weight() is called
         if not allow_negative_weights and min(self.weights) < 0.0:
             raise ValueError('Negative weights provided. ' +
                              'Rescale to positive or set allow_negative_weights=True')
@@ -311,6 +312,7 @@ class BinaryAcceptance(Graph):
         Reorders the binary acceptance matrix and weights array so nodes with
         higher weights appear first. Critical for WHDFS optimisation.
         Returns index mapping to convert sorted results back to original order.
+        Also stores the index map internally for later use.
 
         Returns:
             Index mapping array where index_map[sorted_index] = original_index.
@@ -327,4 +329,5 @@ class BinaryAcceptance(Graph):
         self.bin_acc = self.bin_acc[index_map, :][:, index_map]
         if self.labels is not None:
             self.labels = [self.labels[i] for i in index_map]
+        self._index_map = index_map  # Store for later use
         return index_map
