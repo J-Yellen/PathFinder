@@ -2,7 +2,7 @@
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-103%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-105%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)](pyproject.toml)
 
 **Finding optimal combinations of features with pairwise constraints**
@@ -390,14 +390,14 @@ When using `plot_results.plot()` with WHDFS:
 Visualize Binary Acceptance Matrix with optional result paths overlaid.
 
 ```python
-plot(bam, results=None, top=None, size=16, axis_labels=True, 
+plot(bam=None, results=None, top=None, size=16, axis_labels=True, 
      xy_labels=None, ax=None, show_sink=False, plot_sorted=False,
      highlight_top_path=False)
 ```
 
 **Parameters:**
-- `bam`: BinaryAcceptance object containing the matrix to visualize
-- `results`: Optional Results object containing paths to overlay
+- `bam`: BinaryAcceptance object containing the matrix to visualize. Optional if `results` is an HDFS/WHDFS object (BAM will be extracted from `results.bam`)
+- `results`: Optional Results object (HDFS/WHDFS) containing paths to overlay. Can be passed as first positional argument for simplified API
 - `top`: Maximum number of result paths to display (default: uses results._top)
 - `size`: Figure width in inches (height is size/1.5, default: 16)
 - `axis_labels`: If True, use labels from BinaryAcceptance object (default: True)
@@ -423,9 +423,13 @@ plot(bam, results=None, top=None, size=16, axis_labels=True,
 
 **Example:**
 ```python
-fig, ax = plot_results.plot(bam, whdfs, size=12, 
+# Simplified API - just pass results object
+fig, ax = plot_results.plot(whdfs, size=12, 
                             highlight_top_path=True,
                             axis_labels=True)
+
+# Or explicitly provide both (backward compatible)
+fig, ax = plot_results.plot(bam, whdfs, size=12)
 plt.savefig('results.png', dpi=300, bbox_inches='tight')
 ```
 
