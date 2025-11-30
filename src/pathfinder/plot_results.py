@@ -15,7 +15,8 @@ from matplotlib.patches import Rectangle
 from matplotlib import font_manager
 from .matrix_handler import BinaryAcceptance
 from .result import Results
-from typing import Optional, Tuple, List, Union, Set, Dict, Sequence
+from .dfs import WHDFS
+from typing import Optional, Tuple, List, Union, Set, Dict, Sequence, cast
 
 import logging
 logging.getLogger('matplotlib.font_manager').disabled = True
@@ -152,7 +153,13 @@ def add_results(ax: Axes, res: Results, lim: int) -> None:
     Returns:
         None
     """
-    for i, item in make_path(res.get_paths[:lim:], shift=True).items():
+    # For WHDFS with auto_sort, use sorted paths to match the sorted BAM
+    if isinstance(res, WHDFS) and hasattr(res, 'get_sorted_paths'):
+        paths_to_plot = res.get_sorted_paths()[:lim:]
+    else:
+        paths_to_plot = res.get_paths[:lim:]
+
+    for i, item in make_path(paths_to_plot, shift=True).items():
         if len(item['x']) > 1:
             ax.plot(item['x'], item['y'], lw=3, color=item['color'], linestyle='-',
                     label=f"{res.get_weights[i]:.2g}")
@@ -213,14 +220,13 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
         show_sink: If True, extends matrix to show dummy sink/target node. Default False.
 
     Returns:
-        Tuple of (Figure, Axes) if ax was None, otherwise None (plots on provided axes).
+        Tuple of (Figure, Axes). If ax was provided, Figure is retrieved from the axes.
 
     Example:
         >>> bam = BinaryAcceptance(matrix, weights=weights, threshold=0.5)
         >>> results = HDFS(bam, top=5).find_paths()
         >>> fig, ax = plot(bam, results, size=12)
     """
-    fig = Figure()
     cmap = ListedColormap(['k', 'darkgrey', 'lightgrey', 'w'], name='bwg')
     if show_sink and results is not None:
         dat, result, xy_labels = add_sink_data(bam, results, copy(xy_labels))
@@ -230,10 +236,14 @@ def plot(bam: BinaryAcceptance, results: Optional[Results] = None, top: Optional
 
     dat[np.diag_indices(dat.shape[0])] = 0.3
     dat[np.triu_indices(dat.shape[0], k=1)] = 0.6
+
+    # Create new figure/axes or use provided axes
     if ax is None:
         fig, axis = plt.subplots(figsize=(size, size / 1.5))
     else:
         axis = ax
+        fig = cast(Figure, axis.get_figure())
+
     axis.imshow(dat, cmap=cmap)
     if xy_labels is not None:
         x_ = list(range(len(dat)))
