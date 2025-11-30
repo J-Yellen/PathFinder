@@ -8,18 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `highlight_top_path` parameter to `plot()` function for visually highlighting the best path
+  - Highlights rows corresponding to top path with semi-transparent green overlay
+  - Highlighting stops at diagonal (lower triangle only)
+  - Automatically colors corresponding axis labels dark green and bold
+- `axis_labels` parameter to `plot()` function for automatic label detection from BAM
+  - When `axis_labels=True`, uses labels from `BinaryAcceptance.labels` 
+  - Respects BAM sorting order (works correctly with WHDFS auto_sort)
+  - `xy_labels` parameter still works as override
 - `Results.from_list_of_results()` classmethod for creating Results from Result objects
 - `Results.from_list_of_dicts()` classmethod for creating Results from list of dictionaries
 - `WHDFS.get_sorted_results()` method for accessing Results in sorted index space
 - `WHDFS.__str__()` override for user-friendly display in original indices
 - `plot_sorted` parameter to `plot()` function for visualising sorted vs original index space
-- Comprehensive edge case test suite (`test_edge_cases.py`) with 14 tests covering:
-  - Fully connected/disconnected graphs
-  - Minimal graphs (N=1, N=2)
-  - Threshold boundary conditions
-  - Large sparse graphs
-  - Subset filtering validation
-  - Uniform weight handling
+- Comprehensive test coverage for `dfs.py` with 18 new tests covering:
+  - `get_sorted_results()` and `get_sorted_paths()` methods
+  - String representation with/without auto_sort remapping
+  - Property setters (weight_func, wlimit_func, set_top_weight)
+  - Default weight threshold behavior
+  - Static methods (HDFS.chunked)
+  - Path pruning and traversal edge cases
+  - Index remapping with/without explicit index_map
+  - Type conversions and target node identification
+- Comprehensive test coverage for `plot_results.py` with 4 new edge case tests:
+  - Empty results handling with highlight_top_path
+  - axis_labels behavior when BAM has no labels
+  - Combined highlight_top_path and axis_labels functionality
+  - Single-node path highlighting
 - `test_paths_dont_land_on_black_squares()` validation test preventing plotting regression
 - `test_plot_sorted_parameter()` for verifying correct index space handling
 - Support for `top=None` in HDFS/WHDFS/Results (unlimited path collection)
@@ -35,8 +50,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `_top_weights_default()` returns `float('-inf')` when `top=None` or insufficient paths found
 - `plot()` now handles `top=None` gracefully (displays all available paths)
 - Axis labels in plots now have improved rotation for readability
+- Test coverage increased from 85% to 95% (103 tests passing, up from 83)
 
 ### Fixed
+- **CRITICAL**: Bug in `WHDFS.__init__` where `self.top_weight` was assigned method reference instead of `self._top_weights`
+  - Root cause: Line 180 had `self.top_weight = self._top_weights_default` (shadowed method)
+  - Solution: Changed to `self._top_weights = self._top_weights_default`
+  - Impact: `set_top_weight()` now works correctly, `top_weight()` properly calls custom functions
 - **CRITICAL**: Plotting bug where paths appeared on black squares (invalid edges)
   - Root cause: Displaying sorted BAM matrix with paths in original index space
   - Solution: Detect sorted BAM via `_index_map` and unsort matrix for display when `plot_sorted=False`
@@ -74,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Edge tuple unpacking in `test_matrix_handler.py`
 
 ### Improved
-- Test coverage increased from 60% to 85.33%
+- Test coverage increased from 60% to 85%
 - All 19/19 tests now passing
 - Performance optimisations in WHDFS early termination
 - Documentation quality with examples for complex functions

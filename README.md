@@ -2,8 +2,8 @@
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-83%20passing-brightgreen.svg)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-93.56%25-brightgreen.svg)](pyproject.toml)
+[![Tests](https://img.shields.io/badge/tests-103%20passing-brightgreen.svg)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)](pyproject.toml)
 
 **Finding optimal combinations of features with pairwise constraints**
 
@@ -250,13 +250,17 @@ import pathfinder as pf
 from pathfinder import plot_results
 import matplotlib.pyplot as plt
 
-# Create and solve problem
-bam = pf.BinaryAcceptance(correlation_matrix, weights=weights, threshold=0.5)
+# Create and solve problem with labels
+feature_labels = [f'Feature_{i}' for i in range(len(correlation_matrix))]
+bam = pf.BinaryAcceptance(correlation_matrix, weights=weights, 
+                           labels=feature_labels, threshold=0.5)
 whdfs = pf.WHDFS(bam, top=5)  # Automatic sorting for optimal performance
 whdfs.find_paths()
 
-# Plot BAM with overlaid results (note: plot shows sorted indices)
-fig, ax = plot_results.plot(bam, whdfs, size=12)
+# Plot BAM with overlaid results and visual enhancements
+fig, ax = plot_results.plot(bam, whdfs, size=12, 
+                            highlight_top_path=True,  # Highlight best path
+                            axis_labels=True)          # Use BAM labels
 plt.savefig('pathfinder_results.png', dpi=300, bbox_inches='tight')
 plt.show()
 
@@ -379,6 +383,52 @@ When using `plot_results.plot()` with WHDFS:
   - Best for understanding algorithm internals and performance
 - The function automatically handles index space alignment
 
+### Visualization
+
+#### `plot_results.plot()`
+
+Visualize Binary Acceptance Matrix with optional result paths overlaid.
+
+```python
+plot(bam, results=None, top=None, size=16, axis_labels=True, 
+     xy_labels=None, ax=None, show_sink=False, plot_sorted=False,
+     highlight_top_path=False)
+```
+
+**Parameters:**
+- `bam`: BinaryAcceptance object containing the matrix to visualize
+- `results`: Optional Results object containing paths to overlay
+- `top`: Maximum number of result paths to display (default: uses results._top)
+- `size`: Figure width in inches (height is size/1.5, default: 16)
+- `axis_labels`: If True, use labels from BinaryAcceptance object (default: True)
+  - Respects BAM sorting order (works with WHDFS auto_sort)
+  - Ignored if `xy_labels` is provided
+- `xy_labels`: Optional explicit labels for axes (overrides `axis_labels`)
+- `ax`: Optional existing Axes to plot on (if None, creates new figure)
+- `show_sink`: If True, show dummy sink/target node (default: False)
+- `plot_sorted`: If True, plot in sorted index space (default: False)
+- `highlight_top_path`: If True, highlight rows of best path with green overlay (default: False)
+  - Highlights rows in lower triangle with semi-transparent green
+  - Colors corresponding axis labels dark green and bold
+
+**Returns:**
+- `Tuple[Figure, Axes]`: Matplotlib figure and axes objects
+
+**Visual Elements:**
+- White squares: Features can be combined (relation < threshold)
+- Black squares: Features cannot be combined (relation ≥ threshold)
+- Grey diagonal: Self-relations
+- Colored paths: Result paths overlaid on matrix
+- Green highlighting (optional): Best path visualization with labeled features
+
+**Example:**
+```python
+fig, ax = plot_results.plot(bam, whdfs, size=12, 
+                            highlight_top_path=True,
+                            axis_labels=True)
+plt.savefig('results.png', dpi=300, bbox_inches='tight')
+```
+
 #### `Results`
 
 Container for path/weight pairs with sorting and filtering.
@@ -482,7 +532,7 @@ Enable `allow_subset=True` when:
 
 ## Testing
 
-PathFinder uses pytest with 93.56% code coverage and 83 passing tests:
+PathFinder uses pytest with 95% code coverage and 103 passing tests:
 
 ```bash
 # Run all tests
