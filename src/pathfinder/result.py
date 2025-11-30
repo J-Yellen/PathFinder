@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Union, Set, List, Dict, Any, Sequence
 from os import PathLike
 import json
-from numpy import ndarray
+from numpy import ndarray, allclose
 
 
 @dataclass(order=True)
@@ -35,7 +35,7 @@ class Results():
     def __init__(self,
                  paths: Optional[List[Set[int]]] = None,
                  weights: Optional[List[float]] = None,
-                 top: int = 1,
+                 top: Optional[int] = 1,
                  allow_subset: bool = False):
         """
         initialise Results object
@@ -81,6 +81,33 @@ class Results():
         paths = [set(item.get('path', [])) for _, item in result_dict.items()]
         weights = [item.get('weight', 0.0) for _, item in result_dict.items()]
         return Results(paths=paths, weights=weights, top=top, allow_subset=allow_subset)
+  
+    @classmethod
+    def from_list_of_dicts(cls, result_list: List[Dict[str, Any]], allow_subset: bool = False) -> 'Results':
+        """
+        Create a Results object from a list of dictionaries.
+        Arguments:
+            result_list (List[Dict[str, Union[Set[int], float]]]): List of dictionaries containing paths and weights.
+            allow_subset (bool, optional): Whether to allow subset paths. Defaults to False.
+        Returns:
+            Results: A Results object created from the list of dictionaries.
+        """
+        return cls.from_dict({i: item for i, item in enumerate(result_list)}, allow_subset=allow_subset)
+
+    @classmethod
+    def from_list_of_results(cls, result_list: List[Result], allow_subset: bool = False) -> 'Results':
+        """
+        Create a Results object from a list of Result objects.
+        Arguments:
+            result_list (List[Result]): List of Result objects.
+            allow_subset (bool, optional): Whether to allow subset paths. Defaults to False.
+        Returns:
+            Results: A Results object created from the list of Result objects.
+        """
+        paths = [item.path for item in result_list]
+        weights = [item.weight for item in result_list]
+        top = len(result_list)
+        return Results(paths=paths, weights=weights, top=top, allow_subset=allow_subset)
 
     @classmethod
     def from_json(cls, json_file_name: PathLike, allow_subset: bool = False) -> 'Results':
@@ -96,9 +123,19 @@ class Results():
             result_dict = json.load(json_file)
         return Results.from_dict(result_dict, allow_subset=allow_subset)
 
+    @staticmethod
+    def _to_dict(list_of_results: List[Result]) -> Dict[str, Dict[str, Any]]:
+        """ Convert a dictionary of results to a dictionary representation.
+        Args:
+            list_of_results (List[Result]): List of Result objects.
+        Returns:
+            Dict[int, Dict[str, Any]]: Dictionary representation of the results.
+        """
+        return {f"{i}": {'path': list(item.path), 'weight': item.weight} for i, item in enumerate(list_of_results)}
+
     def to_dict(self) -> dict:
         """ Convert the Results object to a dictionary representation."""
-        return {f"{i}": {'path': list(item.path), 'weight': item.weight} for i, item in enumerate(self.res)}
+        return self._to_dict(self.res)
 
     def to_json(self, file_name: PathLike) -> None:
         """ Save the Results object to a JSON file.
@@ -134,7 +171,7 @@ class Results():
         return res
 
     @property
-    def top(self) -> int:
+    def top(self) -> Union[int, None]:
         return self._top
 
     @top.setter
@@ -288,10 +325,13 @@ class Results():
         if not isinstance(other, Results):
             return NotImplemented
         equal = False
-        if self.top == other.top:
-            other_paths_in_self = all([o.path == s.path for o, s in zip(other.res, self.res)])
-            weights_match = self.get_weights == other.get_weights
-            equal = other_paths_in_self & weights_match
+        if self.top == other.top and len(self.get_paths) == len(other.get_paths):
+            # Compare using get_paths (handles remapping for WHDFS)
+            paths_match = all([set(o) == set(s) for o, s in zip(other.get_paths, self.get_paths)])
+            # Use np.allclose for floating-point tolerance in weight comparison
+            
+            weights_match = allclose(self.get_weights, other.get_weights, rtol=1e-9, atol=1e-12)
+            equal = paths_match & weights_match
         return equal
 
     def __str__(self):
