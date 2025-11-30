@@ -120,6 +120,10 @@ class HDFS(Results):
         if verbose:
             print(self)
 
+    def get_sorted_results(self) -> None:
+        """  not implemented for HDFS """
+        raise NotImplementedError("get_sorted_results is not implemented for HDFS")
+
     def remap_path(self, index_map: Optional[Union[Dict, List, ndarray]] = None,
                    weight_offset: float = 0.0) -> 'Results':
         """
