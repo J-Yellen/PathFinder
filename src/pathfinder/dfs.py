@@ -15,7 +15,7 @@ from typing import Iterable, Iterator, List, Optional, Callable, Union, Dict
 
 class HDFS(Results):
 
-    def __init__(self, binary_acceptance_obj: BinaryAcceptance, top: int = 10,
+    def __init__(self, binary_acceptance_obj: BinaryAcceptance, top: Optional[int] = 10,
                  allow_subset: bool = False) -> None:
         """
             Hereditary Depth First Search Class
@@ -199,6 +199,10 @@ class WHDFS(Results):
         self._top_weights = weight_function
 
     def _top_weights_default(self) -> float:
+        # Return minimum weight threshold for pruning
+        # Only prune if we've found at least 'top' paths
+        if self._top is None or len(self._res) < self._top:
+            return float('-inf')  # Accept any path until we have 'top' paths
         return min(self.get_weights)
 
     def whdfs(self, ignore_child: Optional[list] = None) -> None:
@@ -318,6 +322,24 @@ class WHDFS(Results):
         """
         return super().get_paths
 
+    def get_sorted_results(self) -> 'Results':
+        """
+        Get a new Results object with paths in sorted index space.
+
+        Returns a complete Results object (not just paths) in sorted space,
+        useful for saving, further processing, or analysis.
+
+        Returns:
+            Results object with paths in sorted index space.
+        
+        Example:
+            >>> whdfs = WHDFS(bam, top=5, auto_sort=True)
+            >>> whdfs.find_paths()
+            >>> sorted_results = whdfs.get_sorted_results()
+            >>> sorted_results.to_json("sorted_results.json")
+        """
+        return Results.from_list_of_results(self.res)
+
     def remap_path(self, index_map: Optional[Union[Dict, List, ndarray]] = None,
                    weight_offset: float = 0.0) -> 'Results':
         """
@@ -334,3 +356,14 @@ class WHDFS(Results):
         if index_map is None:
             index_map = self.bam._index_map
         return super().remap_path(index_map, weight_offset)
+
+    def __str__(self) -> str:
+        """
+        String representation showing paths in original index space.
+        When auto_sort was used, automatically remaps for display.
+        """
+        if self.bam._index_map is not None:
+            # Show remapped paths for user-friendly output
+            remapped = self.remap_path(self.bam._index_map)
+            return str(remapped)
+        return super().__str__()
