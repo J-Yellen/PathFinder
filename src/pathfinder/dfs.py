@@ -331,7 +331,7 @@ class WHDFS(Results):
 
         Returns:
             Results object with paths in sorted index space.
-        
+
         Example:
             >>> whdfs = WHDFS(bam, top=5, auto_sort=True)
             >>> whdfs.find_paths()

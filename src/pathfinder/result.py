@@ -81,7 +81,7 @@ class Results():
         paths = [set(item.get('path', [])) for _, item in result_dict.items()]
         weights = [item.get('weight', 0.0) for _, item in result_dict.items()]
         return Results(paths=paths, weights=weights, top=top, allow_subset=allow_subset)
-  
+
     @classmethod
     def from_list_of_dicts(cls, result_list: List[Dict[str, Any]], allow_subset: bool = False) -> 'Results':
         """
@@ -329,7 +329,7 @@ class Results():
             # Compare using get_paths (handles remapping for WHDFS)
             paths_match = all([set(o) == set(s) for o, s in zip(other.get_paths, self.get_paths)])
             # Use np.allclose for floating-point tolerance in weight comparison
-            
+
             weights_match = allclose(self.get_weights, other.get_weights, rtol=1e-9, atol=1e-12)
             equal = paths_match & weights_match
         return equal
