@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import figure, axes
 from pathfinder.matrix_handler import BinaryAcceptance
 from pathfinder import plot_results
-from pathfinder import Results
+from pathfinder import Results, WHDFS
 
 np.random.seed(1)
 
@@ -192,3 +192,88 @@ def test_paths_dont_land_on_black_squares():
                 # The edge must be valid in original BAM
                 assert original_bam[idx1, idx2], \
                     f"WHDFS path contains invalid edge ({idx1}, {idx2}) in original space"
+
+
+def test_highlight_top_path():
+    """Test highlight_top_path parameter works correctly"""
+    from pathfinder.dfs import HDFS, WHDFS
+
+    # Create test data
+    N = 8
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05)
+
+    # Test with HDFS
+    hdfs = HDFS(bam, top=3, allow_subset=False)
+    hdfs.find_paths()
+
+    if len(hdfs.get_paths) > 0:
+        # Should work without error
+        fig1, ax1 = plot_results.plot(bam, hdfs, highlight_top_path=True, size=8)
+        assert fig1 is not None
+        assert ax1 is not None
+
+        # Without highlighting should also work
+        fig2, ax2 = plot_results.plot(bam, hdfs, highlight_top_path=False, size=8)
+        assert fig2 is not None
+        assert ax2 is not None
+
+    # Test with WHDFS and auto_sort
+    whdfs = WHDFS(bam, top=3, allow_subset=False, auto_sort=True)
+    whdfs.find_paths()
+
+    if len(whdfs.get_paths) > 0:
+        # Should work with highlighting in both plot modes
+        fig3, ax3 = plot_results.plot(bam, whdfs, highlight_top_path=True,
+                                      plot_sorted=False, size=8)
+        assert fig3 is not None
+        assert ax3 is not None
+
+        fig4, ax4 = plot_results.plot(bam, whdfs, highlight_top_path=True,
+                                      plot_sorted=True, size=8)
+        assert fig4 is not None
+        assert ax4 is not None
+
+    # Test with labels
+    labels = [f'Feature_{i}' for i in range(N)]
+    fig5, ax5 = plot_results.plot(bam, hdfs, xy_labels=labels,
+                                  highlight_top_path=True, size=8)
+    assert fig5 is not None
+    assert ax5 is not None
+
+
+def test_axis_labels_parameter():
+    """Test axis_labels parameter uses BAM labels correctly"""
+
+    # Create test data with labels
+    N = 6
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+    labels = [f'Feature_{chr(65+i)}' for i in range(N)]
+
+    # Create BAM with labels
+    bam = BinaryAcceptance(pseudo, weights=weights, labels=labels, threshold=0.05)
+
+    whdfs = WHDFS(bam, top=3, allow_subset=False, auto_sort=True)
+    whdfs.find_paths()
+
+    # Test with axis_labels=True (should use BAM labels)
+    if bam.labels is not None:
+        fig1, ax1 = plot_results.plot(bam, whdfs, axis_labels=True, size=8)
+        assert fig1 is not None
+        assert ax1 is not None
+        # Check that labels were applied
+        assert len(ax1.get_xticklabels()) > 0
+
+        # Test that xy_labels overrides axis_labels
+        custom_labels = [f'Custom_{i}' for i in range(N)]
+        fig2, ax2 = plot_results.plot(bam, whdfs, xy_labels=custom_labels,
+                                      axis_labels=True, size=8)
+        assert fig2 is not None
+        assert ax2 is not None
+
+        # Test axis_labels=False with no xy_labels (no labels shown)
+        fig3, ax3 = plot_results.plot(bam, whdfs, axis_labels=False, size=8)
+        assert fig3 is not None
+        assert ax3 is not None
