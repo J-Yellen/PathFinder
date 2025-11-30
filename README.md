@@ -2,8 +2,8 @@
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](pyproject.toml)
+[![Tests](https://img.shields.io/badge/tests-83%20passing-brightgreen.svg)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-93.56%25-brightgreen.svg)](pyproject.toml)
 
 **Finding optimal combinations of features with pairwise constraints**
 
@@ -361,14 +361,23 @@ WHDFS(binary_acceptance_obj, top=10, allow_subset=False, auto_sort=True)
   - `runs`: Number of source nodes to search from (default: all)
   - `source_node`: Starting source node index
   - `verbose`: Print results
-- `get_sorted_paths()`: Get paths in sorted index space (for debugging or plotting)
+- `get_sorted_paths()`: Get paths in sorted index space (for debugging)
+- `get_sorted_results()`: Get complete Results object in sorted index space
 
-**Important Note on Plotting:**
+**Important Note on Index Spaces:**
+When using `WHDFS` with `auto_sort=True` (default):
+- Internally, the algorithm works in **sorted index space** (weight-ordered)
+- `get_paths` and `get_weights` automatically return results in **original index space**
+- `get_sorted_paths()` and `get_sorted_results()` return **sorted index space** (for advanced use)
+- The `__str__()` representation displays paths in original index space for user-friendliness
+
+**Plotting Behavior:**
 When using `plot_results.plot()` with WHDFS:
-- The plot displays the sorted BAM (how the algorithm actually works internally)
-- Paths are overlaid in sorted space to match the matrix
-- But `whdfs.get_paths` returns paths in original index space for your convenience
-- The plot function handles this automatically - no manual adjustment needed
+- Default (`plot_sorted=False`): Displays matrix in original order with paths in original indices
+  - Best for visual comparison with input data
+- `plot_sorted=True`: Displays matrix in sorted order with paths in sorted indices
+  - Best for understanding algorithm internals and performance
+- The function automatically handles index space alignment
 
 #### `Results`
 
@@ -387,7 +396,15 @@ Container for path/weight pairs with sorting and filtering.
   - Not needed for `WHDFS` with `auto_sort=True` (automatic)
   - Required for `HDFS` or when using manual `sort_bam_by_weight()`
 - `to_dict()` / `from_dict()`: Serialisation
+- `from_list_of_results(result_list)`: Create from list of Result objects
+- `from_list_of_dicts(result_list)`: Create from list of dictionaries
 - `to_json()` / `from_json()`: JSON I/O
+
+**Equality Comparison:**
+The `==` operator compares Results objects with proper handling of:
+- Index space remapping (automatically uses `get_paths` for WHDFS)
+- Floating-point tolerance for weights (uses `np.allclose` with rtol=1e-9)
+- Path set comparison (order-independent)
 
 ## Configuration & Best Practices
 
@@ -465,7 +482,7 @@ Enable `allow_subset=True` when:
 
 ## Testing
 
-PathFinder uses pytest with 85% code coverage:
+PathFinder uses pytest with 93.56% code coverage and 83 passing tests:
 
 ```bash
 # Run all tests
@@ -476,7 +493,20 @@ pytest --cov=src/pathfinder --cov-report=html
 
 # Run specific test file
 pytest tests/test_dfs.py -v
+
+# Run edge case tests
+pytest tests/test_edge_cases.py -v
 ```
+
+**Test Suite Coverage:**
+- `test_dfs.py`: HDFS/WHDFS algorithm validation
+- `test_matrix_handler.py`: BinaryAcceptance functionality
+- `test_result.py`: Results class operations
+- `test_plot_results.py`: Visualization correctness (including paths-on-valid-edges validation)
+- `test_edge_cases.py`: Boundary conditions (fully connected/disconnected, minimal graphs, thresholds)
+
+**Critical Validation:**
+The test suite includes `test_paths_dont_land_on_black_squares()` which validates that paths never traverse invalid edges, preventing the critical plotting bug from recurring.
 
 ## Citation
 

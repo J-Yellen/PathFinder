@@ -8,10 +8,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Results.from_list_of_results()` classmethod for creating Results from Result objects
+- `Results.from_list_of_dicts()` classmethod for creating Results from list of dictionaries
+- `WHDFS.get_sorted_results()` method for accessing Results in sorted index space
+- `WHDFS.__str__()` override for user-friendly display in original indices
+- `plot_sorted` parameter to `plot()` function for visualising sorted vs original index space
+- Comprehensive edge case test suite (`test_edge_cases.py`) with 14 tests covering:
+  - Fully connected/disconnected graphs
+  - Minimal graphs (N=1, N=2)
+  - Threshold boundary conditions
+  - Large sparse graphs
+  - Subset filtering validation
+  - Uniform weight handling
+- `test_paths_dont_land_on_black_squares()` validation test preventing plotting regression
+- `test_plot_sorted_parameter()` for verifying correct index space handling
+- Support for `top=None` in HDFS/WHDFS/Results (unlimited path collection)
 - Comprehensive README.md with theoretical background, examples, and API reference
 - Tutorial Jupyter notebook (`notebooks/path_test.ipynb`) demonstrating HDFS/WHDFS usage
 - Project moved to src/ layout for PEP 517 compliance
 - CHANGELOG.md documenting project history
+
+### Changed
+- `WHDFS.get_paths` now automatically remaps to original indices when `auto_sort=True` (default)
+- `Results.__eq__()` improved to use `get_paths` property (handles WHDFS remapping automatically)
+- `Results.__eq__()` now uses `np.allclose` for floating-point weight comparison (rtol=1e-9, atol=1e-12)
+- `_top_weights_default()` returns `float('-inf')` when `top=None` or insufficient paths found
+- `plot()` now handles `top=None` gracefully (displays all available paths)
+- Axis labels in plots now have improved rotation for readability
+
+### Fixed
+- **CRITICAL**: Plotting bug where paths appeared on black squares (invalid edges)
+  - Root cause: Displaying sorted BAM matrix with paths in original index space
+  - Solution: Detect sorted BAM via `_index_map` and unsort matrix for display when `plot_sorted=False`
+  - Ensures paths (in original indices) correctly align with displayed matrix
+- `plot()` now properly unsorts labels when displaying unsorted matrix
+- `add_results()` signature updated to accept `bam` parameter for API compatibility
+- WHDFS pruning threshold logic now correctly handles unlimited path collection (`top=None`)
+- Results static method `_to_dict()` extracted for improved code reusability
 
 ## [0.2.0] - 2025-11-29
 
