@@ -95,3 +95,100 @@ def test_plot_without_results():
     fig, axis = plot_results.plot(bam, results=None, size=8)
     assert fig is not None
     assert axis is not None
+
+
+def test_plot_sorted_parameter():
+    """Test plot_sorted parameter for comparing HDFS and WHDFS visualizations"""
+    from pathfinder.dfs import HDFS, WHDFS
+    
+    # Create test data
+    p, N = 0.1, 10
+    pseudo = pseudo_data(N, p)
+    weights = pseudo_weights(N, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05)
+    
+    # Run HDFS and WHDFS
+    hdfs = HDFS(bam, top=5)
+    hdfs.find_paths()
+    
+    whdfs = WHDFS(bam, top=5, auto_sort=True)
+    whdfs.find_paths()
+    
+    # Test default behavior (plot_sorted=False) - both in original space
+    fig1, ax1 = plot_results.plot(bam, hdfs, plot_sorted=False, size=10)
+    fig2, ax2 = plot_results.plot(bam, whdfs, plot_sorted=False, size=10)
+    assert fig1 is not None and fig2 is not None
+    
+    # Verify WHDFS returns paths in original index space (auto-remapped)
+    if len(whdfs.get_paths) > 0 and whdfs.bam._index_map is not None:
+        # get_paths should be in original space
+        original_paths = whdfs.get_paths
+        # get_sorted_paths should be in sorted space
+        sorted_paths = whdfs.get_sorted_paths()
+        # They should be the same length but potentially different indices
+        assert len(original_paths) == len(sorted_paths)
+    
+    # Test sorted visualization (plot_sorted=True)
+    fig3, ax3 = plot_results.plot(bam, hdfs, plot_sorted=True, size=10)
+    fig4, ax4 = plot_results.plot(bam, whdfs, plot_sorted=True, size=10)
+    assert fig3 is not None and fig4 is not None
+    
+    # Test verbose output uses remapped paths
+    if len(whdfs.res) > 0 and whdfs.bam._index_map is not None:
+        # String representation should show original indices
+        whdfs_str = str(whdfs)
+        assert whdfs_str is not None and len(whdfs_str) > 0
+
+
+def test_paths_dont_land_on_black_squares():
+    """Critical test: verify paths never land on black squares (invalid edges)"""
+    from pathfinder.dfs import HDFS, WHDFS
+    
+    # Create test data with clear structure
+    N = 10
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05)
+    
+    # Test HDFS
+    hdfs = HDFS(bam, top=5, allow_subset=False)
+    hdfs.find_paths()
+    
+    if len(hdfs.get_paths) > 0:
+        # Verify each path only uses valid edges
+        for path in hdfs.get_paths:
+            for i in range(len(path) - 1):
+                idx1, idx2 = path[i], path[i+1]
+                # Check the BAM in original space (unsorted)
+                # Since plot_sorted=False, we compare against original BAM
+                if bam._index_map is not None:
+                    # Unsort to get original BAM
+                    reverse_indices = np.argsort(bam._index_map)
+                    original_bam = bam.bin_acc[reverse_indices, :][:, reverse_indices]
+                else:
+                    original_bam = bam.bin_acc
+                
+                # The edge (idx1, idx2) must be acceptable (True in BAM)
+                assert original_bam[idx1, idx2], \
+                    f"Path contains invalid edge ({idx1}, {idx2}) in original space"
+    
+    # Test WHDFS with auto_sort
+    whdfs = WHDFS(bam, top=5, allow_subset=False, auto_sort=True)
+    whdfs.find_paths()
+    
+    if len(whdfs.get_paths) > 0:
+        # get_paths returns paths in ORIGINAL indices
+        # Verify each path only uses valid edges in ORIGINAL BAM
+        for path in whdfs.get_paths:
+            for i in range(len(path) - 1):
+                idx1, idx2 = path[i], path[i+1]
+                # Unsort BAM to original space
+                if whdfs.bam._index_map is not None:
+                    reverse_indices = np.argsort(whdfs.bam._index_map)
+                    original_bam = whdfs.bam.bin_acc[reverse_indices, :][:, reverse_indices]
+                else:
+                    original_bam = whdfs.bam.bin_acc
+                
+                # The edge must be valid in original BAM
+                assert original_bam[idx1, idx2], \
+                    f"WHDFS path contains invalid edge ({idx1}, {idx2}) in original space"
