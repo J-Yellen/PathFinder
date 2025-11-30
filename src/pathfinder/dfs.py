@@ -177,7 +177,7 @@ class WHDFS(Results):
 
         self.weight_func = self.bam.get_weight
         self.wlimit_func = self.bam.get_weight
-        self.top_weight = self._top_weights_default
+        self._top_weights = self._top_weights_default
         self.n_iteration = 0
 
     @property

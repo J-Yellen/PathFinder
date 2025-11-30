@@ -424,3 +424,251 @@ def test_whdfs_cutoff_logic():
     assert len(whdfs.get_paths) > 0
     # Paths should reach target (sink node is at position dim)
     assert any(len(path) >= 3 for path in whdfs.get_paths)
+
+
+def test_hdfs_get_sorted_results_not_implemented():
+    """Test that HDFS.get_sorted_results raises NotImplementedError"""
+    import pytest
+    pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
+    bam = BinaryAcceptance(pseudo, weights=None)
+    hdfs = HDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
+    hdfs.find_paths(verbose=False)
+    with pytest.raises(NotImplementedError, match="not implemented for HDFS"):
+        hdfs.get_sorted_results()
+
+
+def test_whdfs_get_sorted_results():
+    """Test WHDFS.get_sorted_results returns Results in sorted index space"""
+    pseudo = pseudo_data(N=15, p=0.1)
+    weights = pseudo_weights(N=15, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=3, allow_subset=False, auto_sort=True)
+    whdfs.find_paths(verbose=False)
+    # Get sorted results
+    sorted_results = whdfs.get_sorted_results()
+    # Should be a Results object
+    from pathfinder.result import Results
+    assert isinstance(sorted_results, Results)
+    # Should have paths in sorted space (different from remapped paths)
+    if len(whdfs.get_paths) > 0:
+        assert sorted_results.get_paths[0] != whdfs.get_paths[0]
+
+
+def test_whdfs_get_sorted_paths():
+    """Test WHDFS.get_sorted_paths returns paths in sorted index space"""
+    pseudo = pseudo_data(N=15, p=0.1)
+    weights = pseudo_weights(N=15, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=3, allow_subset=False, auto_sort=True)
+    whdfs.find_paths(verbose=False)
+    # Get sorted paths
+    sorted_paths = whdfs.get_sorted_paths()
+    # Should be different from remapped paths
+    if len(whdfs.get_paths) > 0:
+        assert sorted_paths[0] != whdfs.get_paths[0]
+        # Sorted paths should be [0, 2] for this specific test
+        assert sorted_paths[0] == [0, 2]
+
+
+def test_whdfs_string_representation_with_remapping():
+    """Test WHDFS.__str__ shows remapped paths when auto_sort is used"""
+    pseudo = pseudo_data(N=15, p=0.1)
+    weights = pseudo_weights(N=15, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=3, allow_subset=False, auto_sort=True)
+    whdfs.find_paths(verbose=False)
+    # String representation should show remapped paths
+    str_repr = str(whdfs)
+    assert isinstance(str_repr, str)
+    # Should contain the remapped indices [11, 13]
+    if len(whdfs.get_paths) > 0:
+        assert '11' in str_repr and '13' in str_repr
+
+
+def test_whdfs_string_representation_without_remapping():
+    """Test WHDFS.__str__ without remapping"""
+    pseudo = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]], dtype=bool)
+    bam = BinaryAcceptance(pseudo, weights=None)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*performance.*")
+        whdfs = WHDFS(binary_acceptance_obj=bam, top=1, allow_subset=False, auto_sort=False)
+    whdfs.find_paths(verbose=False)
+    # String representation should work normally
+    str_repr = str(whdfs)
+    assert isinstance(str_repr, str)
+
+
+def test_whdfs_weight_func_setter():
+    """Test WHDFS weight_func property setter"""
+    pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
+    bam = BinaryAcceptance(pseudo, weights=None)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
+    # Set custom weight function
+
+    def custom_func(x):
+        return sum(x) * 2
+    whdfs.weight_func = custom_func
+    assert whdfs.weight_func == custom_func
+
+
+def test_whdfs_wlimit_func_setter():
+    """Test WHDFS wlimit_func property setter"""
+    pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
+    bam = BinaryAcceptance(pseudo, weights=None)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
+    # Set custom wlimit function
+
+    def custom_func(x):
+        return sum(x) * 1.5
+    whdfs.wlimit_func = custom_func
+    assert whdfs.wlimit_func == custom_func
+
+
+def test_whdfs_set_top_weight():
+    """Test WHDFS.set_top_weight method"""
+    pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
+    bam = BinaryAcceptance(pseudo, weights=None)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
+    # Set custom top weight function
+
+    def custom_func():
+        return 5.0
+    whdfs.set_top_weight(custom_func)
+    # Verify the function was set
+    assert whdfs._top_weights == custom_func
+    # Now top_weight() should call the custom function and return 5.0
+    assert whdfs.top_weight() == 5.0
+
+
+def test_whdfs_top_weight_default_behavior():
+    """Test WHDFS._top_weights_default returns -inf when not enough paths"""
+    pseudo = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]], dtype=bool)
+    weights = np.array([3.0, 2.0, 1.0])
+    bam = BinaryAcceptance(pseudo, weights=weights)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=10, allow_subset=False)  # top > available paths
+    # Before finding paths, should return -inf
+    assert whdfs._top_weights_default() == float('-inf')
+
+
+def test_hdfs_chunked_static_method():
+    """Test HDFS.chunked static method"""
+    data = list(range(10))
+    chunks = list(HDFS.chunked(data, 3))
+    assert len(chunks) == 4  # 3+3+3+1
+    assert chunks[0] == [0, 1, 2]
+    assert chunks[1] == [3, 4, 5]
+    assert chunks[2] == [6, 7, 8]
+    assert chunks[3] == [9]
+
+
+def test_whdfs_pruning_with_insufficient_remaining_weight():
+    """Test WHDFS prunes paths when remaining weight is insufficient"""
+    # Create a graph where some paths will be pruned
+    pseudo = np.array([[0, 1, 1, 1],
+                       [1, 0, 1, 0],
+                       [1, 1, 0, 0],
+                       [1, 0, 0, 0]], dtype=bool)
+    weights = np.array([10.0, 5.0, 1.0, 0.1])
+    bam = BinaryAcceptance(pseudo, weights=weights)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
+    whdfs.find_paths(verbose=False)
+    # Should find at least one path
+    assert len(whdfs.get_paths) > 0
+
+
+def test_whdfs_with_visited_child():
+    """Test WHDFS continues correctly when child is already visited"""
+    # Create a graph with potential revisit situations
+    pseudo = np.array([[0, 1, 1, 1],
+                       [1, 0, 1, 1],
+                       [1, 1, 0, 1],
+                       [1, 1, 1, 0]], dtype=bool)
+    weights = np.array([4.0, 3.0, 2.0, 1.0])
+    bam = BinaryAcceptance(pseudo, weights=weights)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=5, allow_subset=False)
+    whdfs.find_paths(verbose=False)
+    # Should handle visited nodes correctly
+    assert len(whdfs.get_paths) > 0
+
+
+def test_hdfs_remap_path_without_index_map():
+    """Test HDFS.remap_path when no index_map is provided and BAM has none"""
+    pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
+    bam = BinaryAcceptance(pseudo, weights=None)
+    hdfs = HDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
+    hdfs.find_paths(verbose=False)
+    # Remap without providing index_map (should use BAM's _index_map which is None)
+    remapped = hdfs.remap_path()
+    # Should be a no-op when no index_map exists
+    assert remapped.get_paths == hdfs.get_paths
+
+
+def test_whdfs_remap_path_without_index_map():
+    """Test WHDFS.remap_path when explicitly called without index_map"""
+    pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
+    bam = BinaryAcceptance(pseudo, weights=None)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*performance.*")
+        whdfs = WHDFS(binary_acceptance_obj=bam, top=1, allow_subset=False, auto_sort=False)
+    whdfs.find_paths(verbose=False)
+    # Remap without providing index_map
+    remapped = whdfs.remap_path()
+    # Should be a no-op when BAM has no _index_map
+    assert len(remapped.get_paths) == len(whdfs.get_sorted_paths())
+
+
+def test_hdfs_remap_path_with_weight_offset():
+    """Test HDFS.remap_path with weight_offset parameter"""
+    pseudo = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]], dtype=bool)
+    weights = np.array([3.0, 2.0, 1.0])
+    bam = BinaryAcceptance(pseudo, weights=weights)
+    index_map = bam.sort_bam_by_weight()
+    hdfs = HDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
+    hdfs.find_paths(verbose=False)
+    # Remap with weight offset
+    remapped = hdfs.remap_path(index_map, weight_offset=0.5)
+    if len(remapped.get_paths) > 0:
+        # Weight should be adjusted
+        original_weight = hdfs.get_weights[0]
+        remapped_weight = remapped.get_weights[0]
+        # Weight offset is per path element, so difference depends on path length
+        assert remapped_weight < original_weight
+
+
+def test_whdfs_get_weights_unchanged():
+    """Test WHDFS.get_weights returns unchanged weights"""
+    pseudo = pseudo_data(N=15, p=0.1)
+    weights = pseudo_weights(N=15, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=3, allow_subset=False, auto_sort=True)
+    whdfs.find_paths(verbose=False)
+    # get_weights should match internal weights
+    if len(whdfs.get_weights) > 0:
+        assert whdfs.get_weights[0] > 0
+        # Should be same as sorted results weights
+        sorted_results = whdfs.get_sorted_results()
+        assert whdfs.get_weights == sorted_results.get_weights
+
+
+def test_hdfs_with_float_ignore_child():
+    """Test HDFS find_paths converts float ignore_child to int"""
+    pseudo = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]], dtype=bool)
+    bam = BinaryAcceptance(pseudo, weights=None)
+    hdfs = HDFS(binary_acceptance_obj=bam, top=3, allow_subset=True)
+    # Pass float as ignore_child - should be converted to int list
+    hdfs.find_paths(ignore_child=1.0, verbose=False)
+    assert len(hdfs.get_paths) > 0
+
+
+def test_whdfs_reaches_target_node():
+    """Test WHDFS correctly identifies when target node is reached"""
+    # Create small fully connected graph
+    pseudo = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]], dtype=bool)
+    weights = np.array([3.0, 2.0, 1.0])
+    bam = BinaryAcceptance(pseudo, weights=weights)
+    whdfs = WHDFS(binary_acceptance_obj=bam, top=5, allow_subset=False)
+    whdfs.find_paths(verbose=False)
+    # Should find paths that reach target
+    assert len(whdfs.get_paths) > 0
+    # All paths should have weights greater than minimum threshold
+    assert all(w > 0 for w in whdfs.get_weights)
