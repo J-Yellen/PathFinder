@@ -75,8 +75,8 @@ index_map = bam.sort_bam_by_weight()
 whdfs = pf.WHDFS(bam, top=5, allow_subset=False)
 whdfs.find_paths(verbose=True)
 
-# Remap results to original indices
-results = whdfs.remap_path(index_map)
+# Remap results to original indices (optional - get_paths does this automatically)
+results = whdfs.remap_path()  # index_map is stored in bam
 
 # Access results
 print(f"Best combination: {results.get_paths[0]}")
@@ -301,7 +301,7 @@ find_best_combinations(matrix, weights=None, threshold=None, top=10,
 Converts pairwise relation matrices to graph representation.
 
 ```python
-BinaryAcceptance(matrix, weights=None, labels=None, 
+BinaryAcceptance(matrix, weights=None, labels=None,
                  threshold=None, allow_negative_weights=False)
 ```
 
@@ -361,6 +361,14 @@ WHDFS(binary_acceptance_obj, top=10, allow_subset=False, auto_sort=True)
   - `runs`: Number of source nodes to search from (default: all)
   - `source_node`: Starting source node index
   - `verbose`: Print results
+- `get_sorted_paths()`: Get paths in sorted index space (for debugging or plotting)
+
+**Important Note on Plotting:**
+When using `plot_results.plot()` with WHDFS:
+- The plot displays the sorted BAM (how the algorithm actually works internally)
+- Paths are overlaid in sorted space to match the matrix
+- But `whdfs.get_paths` returns paths in original index space for your convenience
+- The plot function handles this automatically - no manual adjustment needed
 
 #### `Results`
 
@@ -375,7 +383,7 @@ Container for path/weight pairs with sorting and filtering.
 - `top`: Number of results to retain (settable)
 
 **Methods:**
-- `remap_path(index_map, weight_offset=0.0)`: Convert to original indices
+- `remap_path(index_map=None, weight_offset=0.0)`: Convert to original indices (index_map auto-detected from bam)
   - Not needed for `WHDFS` with `auto_sort=True` (automatic)
   - Required for `HDFS` or when using manual `sort_bam_by_weight()`
 - `to_dict()` / `from_dict()`: Serialisation
@@ -393,12 +401,12 @@ constant_shift = abs(min(weights)) + 1
 weights_positive = weights + constant_shift
 bam = pf.BinaryAcceptance(matrix, weights=weights_positive)
 # ... run algorithm ...
-results = hdfs.remap_path(weight_offset=constant_shift)
+results = hdfs.remap_path(weight_offset=constant_shift)  # index_map optional
 ```
 
 **Option 2: Allow negative weights** (requires `allow_subset=True`)
 ```python
-bam = pf.BinaryAcceptance(matrix, weights=weights, 
+bam = pf.BinaryAcceptance(matrix, weights=weights,
                            allow_negative_weights=True)
 hdfs = pf.HDFS(bam, allow_subset=True)
 ```
@@ -452,7 +460,7 @@ Enable `allow_subset=True` when:
    index_map = bam.sort_bam_by_weight()
    whdfs = pf.WHDFS(bam, top=10, auto_sort=False)
    whdfs.find_paths()
-   results = whdfs.remap_path(index_map)
+   results = whdfs.remap_path()  # No need to pass index_map
    ```
 
 ## Testing
