@@ -36,7 +36,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--strict-markers --cov=src/pathfinder --cov-fail-under=60"
+addopts = "--strict-markers --cov=src/pathfinder --cov-fail-under=90"
 testpaths = ["tests"]
 filterwarnings = [
     "ignore:.*distutils*:DeprecationWarning",
@@ -46,7 +46,7 @@ filterwarnings = [
 source = ["src/pathfinder"]
 
 [tool.coverage.report]
-fail_under = 60
+fail_under = 95
 show_missing = true
 
 [tool.setuptools_scm]

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [1.0.0] - 2025-11-30
+
+**🎉 Major Release: Production-Ready Feature Selection Library**
+
+This release marks PathFinder as production-ready with comprehensive enhancements to visualization, testing, API stability, and bug fixes. The library now provides 95% test coverage, enhanced plotting capabilities, and a stable public API.
+
 ### Added
 - `highlight_top_path` parameter to `plot()` function for visually highlighting the best path
   - Highlights rows corresponding to top path with semi-transparent green overlay
@@ -141,6 +149,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Release Notes
 
+### Version 1.0.0 Highlights
+
+**PathFinder reaches production maturity with this major milestone release.**
+
+Key achievements:
+1. **Enhanced Visualization**: New `highlight_top_path` and `axis_labels` parameters for intuitive result interpretation
+2. **Critical Bug Fixes**: Resolved WHDFS initialization bug and plotting alignment issues
+3. **Comprehensive Testing**: 95% code coverage with 103 passing tests (up from 60% coverage and 19 tests)
+4. **API Stability**: Stable public API with automatic index remapping via `auto_sort=True` (default)
+5. **Developer Experience**: High-level `find_best_combinations()` convenience function
+6. **Production Quality**: Extensive edge case testing, validation tests, and documentation
+
+**Stability Commitment**: v1.0.0 marks API stability. Future changes will follow semantic versioning with backward compatibility within major versions.
+
 ### Version 0.2.0 Highlights
 
 This release represents a major code quality improvement focused on:
@@ -167,6 +189,27 @@ Developed for particle physics analysis combination at ATLAS/CMS, but applicable
 ---
 
 ## Migration Guides
+
+### Migrating to 1.0.0 from 0.2.x
+
+**No breaking changes** - all existing 0.2.x code will work without modification.
+
+**New Features Available**:
+```python
+# Enhanced plotting with visual highlights
+from pathfinder import plot_results
+fig, ax = plot_results.plot(bam, results, 
+                            highlight_top_path=True,  # NEW
+                            axis_labels=True)         # NEW
+
+# Simpler workflow with convenience function
+results = pf.find_best_combinations(matrix, weights, threshold=0.7)
+```
+
+**Bug Fixes Applied Automatically**:
+- WHDFS `set_top_weight()` now works correctly
+- Plotting always shows paths on valid edges (white squares)
+- Index space alignment handled automatically
 
 ### Migrating from 0.1.x to 0.2.x
 
