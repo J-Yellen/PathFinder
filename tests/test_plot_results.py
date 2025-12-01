@@ -1,11 +1,19 @@
 import pytest
 import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib import figure, axes
 from pathfinder.matrix_handler import BinaryAcceptance
 from pathfinder import plot_results
 from pathfinder import Results, WHDFS, HDFS
 
 np.random.seed(1)
+
+
+@pytest.fixture(autouse=True)
+def close_figures():
+    """Close all matplotlib figures after each test to prevent memory warnings"""
+    yield
+    plt.close('all')
 
 
 def pseudo_data(N=25, p=0.05) -> np.ndarray:
@@ -316,3 +324,144 @@ def test_plot_requires_bam():
     # Should also raise when both are None
     with pytest.raises(ValueError, match="Either bam parameter or results with bam attribute"):
         plot_results.plot()
+
+
+def test_add_results_with_plain_results():
+    """Test add_results() function with plain Results object (no HDFS/WHDFS)"""
+    N = 6
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05)
+
+    # Create plain Results object with paths
+    results = Results.from_dict({
+        0: {'path': [0, 1, 2], 'weight': 3.0},
+        1: {'path': [0, 2, 3], 'weight': 2.5}
+    })
+
+    # Plot with plain Results - should work
+    fig, ax = plot_results.plot(bam, results, size=8)
+    assert fig is not None
+    assert ax is not None
+
+
+def test_plot_with_provided_axes():
+    """Test plot() with user-provided axes object"""
+
+    N = 5
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05)
+
+    hdfs = HDFS(bam, top=3)
+    hdfs.find_paths()
+
+    # Create figure and axes
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    # Pass axes to plot function
+    returned_fig, returned_ax = plot_results.plot(bam, hdfs, ax=ax, size=8)
+
+    assert returned_fig is fig
+    assert returned_ax is ax
+
+
+def test_plot_ambiguous_parameters_error():
+    """Test plot() raises error when both bam and results are Results-like objects"""
+    N = 5
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05)
+
+    whdfs = WHDFS(bam, top=3)
+    whdfs.find_paths()
+
+    hdfs = HDFS(bam, top=3)
+    hdfs.find_paths()
+
+    # Should raise ValueError when passing Results as first param AND also providing results
+    with pytest.raises(ValueError, match="Ambiguous parameters"):
+        plot_results.plot(whdfs, hdfs)  # type: ignore[arg-type]  # Both have .bam attribute
+
+
+def test_plot_sorted_with_hdfs():
+    """Test plot_sorted=True with HDFS when BAM has been sorted"""
+    N = 8
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05)
+
+    # Sort the BAM
+    index_map = bam.sort_bam_by_weight()
+    assert index_map is not None
+
+    # Run HDFS on sorted BAM
+    hdfs = HDFS(bam, top=3, allow_subset=False)
+    hdfs.find_paths()
+
+    if len(hdfs.get_paths) > 0:
+        # Test plot_sorted=True with HDFS (tests the reverse_map branch)
+        fig, ax = plot_results.plot(bam, hdfs, plot_sorted=True,
+                                    highlight_top_path=True, size=8)
+        assert fig is not None
+        assert ax is not None
+
+
+def test_show_sink_with_results():
+    """Test show_sink parameter extends matrix and adds sink to paths"""
+    N = 5
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+    labels = [f'L{i}' for i in range(N)]
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05, labels=labels)
+
+    hdfs = HDFS(bam, top=2)
+    hdfs.find_paths()
+
+    # Test with show_sink=True and custom labels (add_sink_data handles this)
+    fig, ax = plot_results.plot(bam, hdfs, show_sink=True, xy_labels=labels, size=8)
+    assert fig is not None
+    assert ax is not None
+
+    # Should have extended the matrix by 1
+    # (can't directly check matrix size but can verify plot succeeded)
+
+
+def test_plot_sorted_with_plain_results():
+    """Test plot_sorted parameter with plain Results object"""
+    N = 6
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05)
+
+    # Create plain Results
+    results = Results.from_dict({
+        0: {'path': [0, 1, 2], 'weight': 3.0}
+    })
+
+    # Should work with plot_sorted (falls through to plain get_paths)
+    fig, ax = plot_results.plot(bam, results, plot_sorted=True, size=8)
+    assert fig is not None
+    assert ax is not None
+
+
+def test_highlight_top_path_without_index_map():
+    """Test highlight_top_path when BAM has no index_map"""
+    N = 6
+    pseudo = pseudo_data(N, p=0.3)
+    weights = pseudo_weights(N, sort=False)
+    # Create BAM without sorting
+    bam = BinaryAcceptance(pseudo, weights=weights, threshold=0.05)
+
+    # Don't sort - _index_map should be None
+    assert bam._index_map is None
+
+    hdfs = HDFS(bam, top=2)
+    hdfs.find_paths()
+
+    if len(hdfs.get_paths) > 0:
+        # Test highlight with no index_map (tests else branch)
+        fig, ax = plot_results.plot(bam, hdfs, highlight_top_path=True,
+                                    plot_sorted=True, size=8)
+        assert fig is not None
+        assert ax is not None
