@@ -24,7 +24,7 @@ class HDFS(Results):
             allow_subset (bool, optional): _description_. Defaults to True.
         """
         if not allow_subset and min(binary_acceptance_obj.weights) < 0:
-            raise Exception('WARNING! Negative weights provided. Subset exclusion cannot be guarantied!')
+            raise Exception('WARNING! Negative weights provided. Subset exclusion cannot be guaranteed!')
         super().__init__(top=top, allow_subset=allow_subset)
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
