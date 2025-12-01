@@ -2,7 +2,7 @@
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-105%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-134%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)](pyproject.toml)
 
 **Finding optimal combinations of features with pairwise constraints**
@@ -65,18 +65,13 @@ correlation_matrix = (correlation_matrix + correlation_matrix.T) / 2  # Make sym
 # Define feature weights (e.g., statistical significance)
 weights = np.random.rand(n_features)
 
-# Create Binary Acceptance Matrix with threshold
-bam = pf.BinaryAcceptance(correlation_matrix, weights=weights, threshold=0.5)
-
-# Sort by weights for optimal performance
-index_map = bam.sort_bam_by_weight()
-
-# Find optimal combinations
-whdfs = pf.WHDFS(bam, top=5, allow_subset=False)
-whdfs.find_paths(verbose=True)
-
-# Remap results to original indices (optional - get_paths does this automatically)
-results = whdfs.remap_path()  # index_map is stored in bam
+# Find optimal combinations (one function call!)
+results = pf.find_best_combinations(
+    matrix=correlation_matrix,
+    weights=weights,
+    threshold=0.5,
+    top=5
+)
 
 # Access results
 print(f"Best combination: {results.get_paths[0]}")
@@ -204,7 +199,7 @@ correlation = np.corrcoef(X.T)
 f_stats, _ = f_classif(X, data.target)
 weights = f_stats / f_stats.sum()
 
-# Create BAM and search (automatic sorting and remapping)
+# For advanced control, use the core classes directly
 bam = pf.BinaryAcceptance(correlation, weights=weights, threshold=0.7)
 whdfs = pf.WHDFS(bam, top=10, allow_subset=False)  # auto_sort=True by default
 whdfs.find_paths()
@@ -249,23 +244,30 @@ print(f"Combined significance: {results.get_weights[0]:.2f}σ")
 import pathfinder as pf
 from pathfinder import plot_results
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Create and solve problem with labels
-feature_labels = [f'Feature_{i}' for i in range(len(correlation_matrix))]
+# Create data with labels
+n_features = 20
+correlation_matrix = np.random.rand(n_features, n_features)
+correlation_matrix = (correlation_matrix + correlation_matrix.T) / 2
+weights = np.random.rand(n_features)
+feature_labels = [f'Feature_{i}' for i in range(n_features)]
+
+# Find optimal combinations with labels
 bam = pf.BinaryAcceptance(correlation_matrix, weights=weights, 
                            labels=feature_labels, threshold=0.5)
-whdfs = pf.WHDFS(bam, top=5)  # Automatic sorting for optimal performance
+whdfs = pf.WHDFS(bam, top=5)
 whdfs.find_paths()
 
 # Plot BAM with overlaid results and visual enhancements
-fig, ax = plot_results.plot(bam, whdfs, size=12, 
+fig, ax = plot_results.plot(whdfs, size=12, 
                             highlight_top_path=True,  # Highlight best path
                             axis_labels=True)          # Use BAM labels
 plt.savefig('pathfinder_results.png', dpi=300, bbox_inches='tight')
 plt.show()
 
 # Access results in original index space
-print(f"Best path (original indices): {whdfs.get_paths[0]}")
+print(f"Best path: {whdfs.get_paths[0]}")
 ```
 
 ## API Reference
