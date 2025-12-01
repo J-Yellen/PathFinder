@@ -36,14 +36,14 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--strict-markers --cov=src/pathfinder --cov-fail-under=90"
+addopts = "--strict-markers --cov=pathfinder --cov-report=term-missing --cov-fail-under=90"
 testpaths = ["tests"]
 filterwarnings = [
     "ignore:.*distutils*:DeprecationWarning",
 ]
 
 [tool.coverage.run]
-source = ["src/pathfinder"]
+source = ["pathfinder"]
 
 [tool.coverage.report]
 fail_under = 90
