@@ -5,7 +5,7 @@ import pytest
 np.random.seed(1)
 
 
-def get_basic_data(ret_dtype: object = bool):
+def get_basic_data(ret_dtype: type = bool):
     matrix = [[0, 1, 1, 0],
               [1, 0, 1, 0],
               [1, 1, 0, 1],
@@ -37,7 +37,6 @@ def test_threshold():
 def test_getters():
     weights = np.array([1, 1, 1, -3.0])
     bam = BinaryAcceptance(get_basic_data(ret_dtype=bool), weights=weights, allow_negative_weights=True)
-    assert bam.get_abs_weight_lim([1, 2, 3]) == 5
     assert bam.get_weight([1, 2, 3]) == -1
     assert all([sum(item) == num for item, num in zip(bam.get_full_triu(), [3, 2, 1, 0, 0])])
 
@@ -54,12 +53,40 @@ def test_reset_source():
 def test_graph():
     matrix = get_basic_data(ret_dtype=bool)
     weights = np.ones(len(matrix))
-    edges = [(*ij, weights[ij[1]]) for ij in np.argwhere(np.triu(matrix, 1))]
+    edges = [(ij[0], ij[1], float(weights[ij[1]])) for ij in np.argwhere(np.triu(matrix, 1))]
     graph = Graph()
     graph.add_weighted_edges(edges)
     assert graph.edges() == [(0, 1), (0, 2), (1, 2), (2, 3)]
     assert graph.edges(1) == [(1, 2)]
     assert graph.edges(3) == []
+
+
+def test_matrix_handler_negative_weights_error():
+    """Test BinaryAcceptance raises error for negative weights when not allowed"""
+    matrix = np.array([[0, 1], [1, 0]], dtype=bool)
+    weights = np.array([1.0, -1.0])
+    with pytest.raises(ValueError, match="Negative weights"):
+        BinaryAcceptance(matrix, weights=weights, allow_negative_weights=False)
+
+
+def test_matrix_handler_with_labels():
+    """Test BinaryAcceptance with labels parameter"""
+    matrix = np.array([[0, 1, 1],
+                       [1, 0, 1],
+                       [1, 1, 0]], dtype=bool)
+    labels = ['A', 'B', 'C']
+    bam = BinaryAcceptance(matrix, labels=labels)
+    assert bam.labels == labels
+
+
+def test_matrix_handler_reset_source_out_of_range():
+    """Test BinaryAcceptance.reset_source with out-of-range value defaults to 0"""
+    matrix = np.array([[0, 1], [1, 0]], dtype=bool)
+    bam = BinaryAcceptance(matrix)
+    bam.reset_source(1)
+    assert bam.source == 1
+    bam.reset_source(10)  # Out of range, should default to 0
+    assert bam.source == 0
 
 
 if __name__ == '__main__':

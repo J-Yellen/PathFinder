@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pathfinder"
+dynamic = ["version"]
+description = "Tools for finding the optimal combination of features given pairwise relations and weights"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    {name = "Jamie Yellen"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "ipykernel>=6.25.1",
+    "matplotlib>=3.5.1",
+    "numpy>=1.23.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/J-Yellen/PathFinder"
+Repository = "https://github.com/J-Yellen/PathFinder"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --cov=pathfinder --cov-report=term-missing --cov-fail-under=90"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore:.*distutils*:DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["pathfinder"]
+omit = ["**/pathfinder/pathfinder/*"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+omit = ["**/pathfinder/pathfinder/*"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pathfinder*"]
+exclude = ["pathfinder.pathfinder*"]
+
+[tool.setuptools_scm]
+version_file = "src/pathfinder/_version.py"
