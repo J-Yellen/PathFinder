@@ -145,8 +145,7 @@ def add_results(
         ax: Axes,
         res: Results,
         lim: int,
-        plot_sorted: bool = False,
-        bam: Optional[BinaryAcceptance] = None
+        plot_sorted: bool = False
 ) -> None:
     """
     Plot result paths on the axes.
@@ -156,7 +155,6 @@ def add_results(
         res: Results object containing paths to visualise.
         lim: Maximum number of paths to plot.
         plot_sorted: If True, plot paths in sorted index space. If False, plot in original space.
-        bam: BinaryAcceptance object (unused, kept for API compatibility).
 
     Returns:
         None
@@ -373,6 +371,6 @@ def plot(bam: Optional[BinaryAcceptance] = None, results: Optional[Union[WHDFS, 
     if result:
         if top is None:
             top = result._top if result._top is not None else len(result.get_paths)
-        add_results(axis, result, lim=top, plot_sorted=plot_sorted, bam=bam)
+        add_results(axis, result, lim=top, plot_sorted=plot_sorted)
 
     return fig, axis
