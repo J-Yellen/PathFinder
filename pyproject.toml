@@ -44,10 +44,17 @@ filterwarnings = [
 
 [tool.coverage.run]
 source = ["pathfinder"]
+omit = ["**/pathfinder/pathfinder/*"]
 
 [tool.coverage.report]
 fail_under = 90
 show_missing = true
+omit = ["**/pathfinder/pathfinder/*"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pathfinder*"]
+exclude = ["pathfinder.pathfinder*"]
 
 [tool.setuptools_scm]
 version_file = "src/pathfinder/_version.py"
