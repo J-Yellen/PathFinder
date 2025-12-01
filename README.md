@@ -538,7 +538,7 @@ Enable `allow_subset=True` when:
 
 ## Testing
 
-PathFinder uses pytest with 95% code coverage and 103 passing tests:
+PathFinder uses pytest with 95% code coverage and 134 passing tests:
 
 ```bash
 # Run all tests
