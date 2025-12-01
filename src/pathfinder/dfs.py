@@ -7,7 +7,6 @@
 from functools import partial
 from itertools import islice
 import numpy as np
-from numpy import ndarray
 from .matrix_handler import BinaryAcceptance
 from .result import Results
 from typing import Iterable, Iterator, List, Optional, Callable, Union, Dict
@@ -30,6 +29,14 @@ class HDFS(Results):
         self.bam = binary_acceptance_obj
         self.weight_func = self.bam.get_weight
         self.n_iteration = 0
+
+    @property
+    def weight_func(self) -> Callable:
+        return self._weight_func
+
+    @weight_func.setter
+    def weight_func(self, weight_function: Callable) -> None:
+        self._weight_func = weight_function
 
     def hdfs(self, trim: bool = True, ignore_child: Optional[List] = None) -> Iterator:
         """
@@ -124,7 +131,7 @@ class HDFS(Results):
         """  not implemented for HDFS """
         raise NotImplementedError("get_sorted_results is not implemented for HDFS")
 
-    def remap_path(self, index_map: Optional[Union[Dict, List, ndarray]] = None,
+    def remap_path(self, index_map: Optional[Union[Dict, List, np.ndarray]] = None,
                    weight_offset: float = 0.0) -> 'Results':
         """
         Remap paths to original indices. If index_map is not provided,
@@ -140,6 +147,32 @@ class HDFS(Results):
         if index_map is None:
             index_map = self.bam._index_map
         return super().remap_path(index_map, weight_offset)
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Compare HDFS objects. Compares results from parent class and HDFS-specific attributes.
+
+        Args:
+            other: Object to compare with.
+
+        Returns:
+            True if objects are equal, False otherwise.
+        """
+        if not isinstance(other, HDFS):
+            return NotImplemented
+        # Compare parent Results attributes
+        if not super().__eq__(other):
+            return False
+        # Compare HDFS-specific attributes
+        # Note: n_iteration is a runtime counter, not compared for equality
+        # For bound methods, compare the underlying function (not __self__ to avoid recursion)
+        weight_func_equal = (
+            self.weight_func == other.weight_func or
+            (hasattr(self.weight_func, '__func__') and
+             hasattr(other.weight_func, '__func__') and
+             getattr(self.weight_func, '__func__') == getattr(other.weight_func, '__func__'))
+        )
+        return self.bam == other.bam and weight_func_equal
 
 
 class WHDFS(Results):
@@ -344,7 +377,7 @@ class WHDFS(Results):
         """
         return Results.from_list_of_results(self.res)
 
-    def remap_path(self, index_map: Optional[Union[Dict, List, ndarray]] = None,
+    def remap_path(self, index_map: Optional[Union[Dict, List, np.ndarray]] = None,
                    weight_offset: float = 0.0) -> 'Results':
         """
         Remap paths to original indices. If index_map is not provided,
@@ -371,3 +404,36 @@ class WHDFS(Results):
             remapped = self.remap_path(self.bam._index_map)
             return str(remapped)
         return super().__str__()
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Compare WHDFS objects. Compares results from parent class and WHDFS-specific attributes.
+
+        Args:
+            other: Object to compare with.
+
+        Returns:
+            True if objects are equal, False otherwise.
+        """
+        if not isinstance(other, WHDFS):
+            return NotImplemented
+        # Compare parent Results attributes
+        if not super().__eq__(other):
+            return False
+        # Compare WHDFS-specific attributes
+        # Note: n_iteration is a runtime counter, not compared for equality
+
+        # For bound methods, compare the underlying function
+        # We can't compare __self__ as it would cause infinite recursion
+        def compare_callable(c1: Callable, c2: Callable) -> bool:
+            if c1 == c2:
+                return True
+            # Handle bound methods - just check if same function
+            if hasattr(c1, '__func__') and hasattr(c2, '__func__'):
+                return getattr(c1, '__func__') == getattr(c2, '__func__')
+            return False
+
+        return (self.bam == other.bam and
+                compare_callable(self.weight_func, other.weight_func) and
+                compare_callable(self.wlimit_func, other.wlimit_func) and
+                compare_callable(self._top_weights, other._top_weights))

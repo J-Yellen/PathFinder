@@ -331,3 +331,42 @@ class BinaryAcceptance(Graph):
             self.labels = [self.labels[i] for i in index_map]
         self._index_map = index_map  # Store for later use
         return index_map
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Compare BinaryAcceptance objects for equality.
+
+        Compares source, binary acceptance matrix, weights, and labels.
+        Does not compare graph structure (_adj, _node) as it's derived from other attributes.
+
+        Args:
+            other: Object to compare with.
+
+        Returns:
+            True if objects are equal, False otherwise.
+        """
+        if not isinstance(other, BinaryAcceptance):
+            return NotImplemented
+
+        # Compare basic attributes
+        if self.source != other.source:
+            return False
+
+        # Compare numpy arrays with appropriate tolerance
+        if not np.array_equal(self.bin_acc, other.bin_acc):
+            return False
+
+        if not np.allclose(self.weights, other.weights, rtol=1e-9, atol=1e-12):
+            return False
+
+        # Compare labels (can be None)
+        if self.labels != other.labels:
+            return False
+
+        # Compare index map (can be None)
+        if self._index_map is None and other._index_map is None:
+            return True
+        elif self._index_map is None or other._index_map is None:
+            return False
+        else:
+            return np.array_equal(self._index_map, other._index_map)
