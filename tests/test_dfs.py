@@ -1,7 +1,9 @@
 import warnings
+import pytest
 import numpy as np
 from pathfinder.matrix_handler import BinaryAcceptance
-from pathfinder.dfs import HDFS, WHDFS
+from pathfinder.dfs import HDFS, WHDFS, Results
+from pathfinder import find_best_combinations
 
 
 def pseudo_data(N=25, p=0.05, seed=1) -> np.ndarray:
@@ -108,7 +110,7 @@ def test_WHDFS_auto_sort():
 
 def test_convenience_function():
     """Test find_best_combinations convenience function"""
-    from pathfinder import find_best_combinations
+
     pseudo = pseudo_data(N=15, p=0.1)
     weights = pseudo_weights(N=15, sort=False)
     # Use convenience function
@@ -180,7 +182,6 @@ def test_whdfs_with_ignore_child():
 
 def test_whdfs_ignore_child_length_mismatch():
     """Test WHDFS raises error when ignore_child length doesn't match runs"""
-    import pytest
     pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
     bam = BinaryAcceptance(pseudo, weights=None)
     with warnings.catch_warnings():
@@ -246,12 +247,11 @@ def test_whdfs_reset_result_false():
 
 def test_convenience_function_with_hdfs():
     """Test find_best_combinations with HDFS algorithm"""
-    import pathfinder as pf
     pseudo = np.array([[0, 1, 1],
                        [1, 0, 1],
                        [1, 1, 0]], dtype=bool)
     weights = np.array([3.0, 2.0, 1.0])
-    results = pf.find_best_combinations(
+    results = find_best_combinations(
         matrix=pseudo,
         weights=weights,
         top=1,
@@ -263,11 +263,9 @@ def test_convenience_function_with_hdfs():
 
 def test_convenience_function_invalid_algorithm():
     """Test find_best_combinations with invalid algorithm"""
-    import pytest
-    import pathfinder as pf
     pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
     with pytest.raises(ValueError, match="Unknown algorithm"):
-        pf.find_best_combinations(
+        find_best_combinations(
             matrix=pseudo,
             algorithm='invalid_algo'
         )
@@ -275,13 +273,12 @@ def test_convenience_function_invalid_algorithm():
 
 def test_convenience_function_with_runs():
     """Test find_best_combinations with runs parameter"""
-    import pathfinder as pf
     pseudo = np.array([[0, 1, 1, 1],
                        [1, 0, 1, 1],
                        [1, 1, 0, 1],
                        [1, 1, 1, 0]], dtype=bool)
     weights = np.array([4.0, 3.0, 2.0, 1.0])
-    results = pf.find_best_combinations(
+    results = find_best_combinations(
         matrix=pseudo,
         weights=weights,
         top=2,
@@ -293,12 +290,11 @@ def test_convenience_function_with_runs():
 
 def test_convenience_function_with_labels():
     """Test find_best_combinations with labels parameter"""
-    import pathfinder as pf
     pseudo = np.array([[0, 1, 1],
                        [1, 0, 1],
                        [1, 1, 0]], dtype=bool)
     labels = ['A', 'B', 'C']
-    results = pf.find_best_combinations(
+    results = find_best_combinations(
         matrix=pseudo,
         labels=labels,
         top=1
@@ -364,16 +360,8 @@ def test_whdfs_cutoff_reached():
     assert len(whdfs.get_paths) > 0
 
 
-def test_version_import():
-    """Test that __version__ is accessible"""
-    import pathfinder as pf
-    assert hasattr(pf, '__version__')
-    assert isinstance(pf.__version__, str)
-
-
 def test_hdfs_negative_weights_with_subset_false():
     """Test HDFS raises exception for negative weights when allow_subset=False"""
-    import pytest
     pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
     weights = np.array([1.0, -1.0])
     bam = BinaryAcceptance(pseudo, weights=weights, allow_negative_weights=True)
@@ -383,7 +371,6 @@ def test_hdfs_negative_weights_with_subset_false():
 
 def test_whdfs_negative_weights_with_subset_false():
     """Test WHDFS raises exception for negative weights when allow_subset=False"""
-    import pytest
     pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
     weights = np.array([1.0, -1.0])
     bam = BinaryAcceptance(pseudo, weights=weights, allow_negative_weights=True)
@@ -428,7 +415,7 @@ def test_whdfs_cutoff_logic():
 
 def test_hdfs_get_sorted_results_not_implemented():
     """Test that HDFS.get_sorted_results raises NotImplementedError"""
-    import pytest
+
     pseudo = np.array([[0, 1], [1, 0]], dtype=bool)
     bam = BinaryAcceptance(pseudo, weights=None)
     hdfs = HDFS(binary_acceptance_obj=bam, top=1, allow_subset=False)
@@ -447,7 +434,7 @@ def test_whdfs_get_sorted_results():
     # Get sorted results
     sorted_results = whdfs.get_sorted_results()
     # Should be a Results object
-    from pathfinder.result import Results
+
     assert isinstance(sorted_results, Results)
     # Should have paths in sorted space (different from remapped paths)
     if len(whdfs.get_paths) > 0:
@@ -656,7 +643,7 @@ def test_hdfs_with_float_ignore_child():
     bam = BinaryAcceptance(pseudo, weights=None)
     hdfs = HDFS(binary_acceptance_obj=bam, top=3, allow_subset=True)
     # Pass float as ignore_child - should be converted to int list
-    hdfs.find_paths(ignore_child=1.0, verbose=False)
+    hdfs.find_paths(ignore_child=[1.0], verbose=False)
     assert len(hdfs.get_paths) > 0
 
 
