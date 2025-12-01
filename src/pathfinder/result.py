@@ -235,7 +235,8 @@ class Results():
         """
         if trim:
             self._res = sorted(self._res, reverse=True)[:self._top]
-        self._res = sorted(self._res, reverse=True)
+        else:
+            self._res = sorted(self._res, reverse=True)
 
     def add_result(self,
                    path: Union[Set[int], List[int]],

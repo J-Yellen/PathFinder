@@ -1,6 +1,7 @@
 import tempfile
 import os
 import pytest
+from random import shuffle
 import numpy as np
 from pathfinder.result import Result, Results
 from pathlib import Path
@@ -265,6 +266,42 @@ def test_results_get_raw_paths():
     # Results are sorted by weight (descending), so highest weight comes first
     assert raw_paths[0] == {5, 3}  # weight 2.0
     assert raw_paths[1] == {2, 1, 0}  # weight 1.0
+
+
+def test_results_res_sort_with_trim_true():
+    """Test Results.res_sort with trim=True"""
+    paths = [{i} for i in range(10)]
+    weights = [float(i) for i in range(10)]
+    # Shuffle to ensure sorting is needed
+    combined = list(zip(paths, weights))
+    shuffle(combined)
+    paths_shuffled, weights_shuffled = zip(*combined)
+
+    results = Results(list(paths_shuffled), list(weights_shuffled), top=5)
+    results.res_sort(trim=True)
+
+    # Should be sorted by weight descending and trimmed to top 5
+    assert len(results.res) == 5
+    assert results.get_weights == [9.0, 8.0, 7.0, 6.0, 5.0]
+    assert results.best.weight == 9.0
+
+
+def test_results_res_sort_with_trim_false():
+    """Test Results.res_sort with trim=False"""
+    paths = [{i} for i in range(10)]
+    weights = [float(i) for i in range(10)]
+    # Shuffle to ensure sorting is needed
+    combined = list(zip(paths, weights))
+    shuffle(combined)
+    paths_shuffled, weights_shuffled = zip(*combined)
+
+    results = Results(list(paths_shuffled), list(weights_shuffled), top=5)
+    results.res_sort(trim=False)
+
+    # Should be sorted by weight descending but NOT trimmed
+    assert len(results.res) == 5
+    assert results.get_weights == [9.0, 8.0, 7.0, 6.0, 5.0,]
+    assert results.best.weight == 9.0
 
 
 if __name__ == '__main__':
