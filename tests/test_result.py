@@ -1,3 +1,6 @@
+import tempfile
+import os
+import pytest
 import numpy as np
 from pathfinder.result import Result, Results
 from pathlib import Path
@@ -84,8 +87,6 @@ def test_remap_path():
 
 def test_results_to_json_to_file():
     """Test Results JSON serialization to file"""
-    import tempfile
-    import os
     paths = [{0, 1, 2}, {1, 2}]
     weights = [3.0, 2.0]
     results = Results(paths, weights, top=2)
@@ -130,7 +131,6 @@ def test_results_empty_initialization():
 
 def test_results_mismatched_lengths():
     """Test Results raises error when paths and weights lengths don't match"""
-    import pytest
     with pytest.raises(ValueError, match="Unequal length"):
         Results([{0}], [1.0, 2.0], top=1)
 
@@ -146,14 +146,12 @@ def test_results_paths_without_weights():
 
 def test_results_only_paths_provided():
     """Test Results raises error when only paths provided without weights"""
-    import pytest
     with pytest.raises(ValueError, match="Both paths and weights"):
         Results(paths=[{0}], weights=None, top=1)
 
 
 def test_results_only_weights_provided():
     """Test Results raises error when only weights provided without paths"""
-    import pytest
     with pytest.raises(ValueError, match="Both paths and weights"):
         Results(paths=None, weights=[1.0], top=1)
 
@@ -169,8 +167,6 @@ def test_results_from_dict_basic():
 
 def test_results_from_json_file():
     """Test Results.from_json loading from file"""
-    import tempfile
-    import os
     paths = [{0, 1}, {1, 2}]
     weights = [2.0, 3.0]
     results = Results(paths, weights, top=2)

@@ -161,7 +161,7 @@ def test_hdfs_equality_different_weight_func():
     hdfs2 = HDFS(bam, top=5)
 
     # Change weight function
-    hdfs2.weight_func = lambda x: sum(x)
+    hdfs2.weight_func = sum
 
     assert hdfs1 != hdfs2
 
@@ -219,7 +219,7 @@ def test_whdfs_equality_different_weight_func():
     whdfs2 = WHDFS(bam, top=5, auto_sort=False)
 
     # Change weight function
-    whdfs2.weight_func = lambda x: sum(x)
+    whdfs2.weight_func = sum
 
     assert whdfs1 != whdfs2
 
@@ -236,7 +236,7 @@ def test_whdfs_equality_different_wlimit_func():
     whdfs2 = WHDFS(bam, top=5, auto_sort=False)
 
     # Change wlimit function
-    whdfs2.wlimit_func = lambda x: sum(x)
+    whdfs2.wlimit_func = sum
 
     assert whdfs1 != whdfs2
 

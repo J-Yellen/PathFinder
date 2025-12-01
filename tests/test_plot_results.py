@@ -1,8 +1,9 @@
+import pytest
 import numpy as np
 from matplotlib import figure, axes
 from pathfinder.matrix_handler import BinaryAcceptance
 from pathfinder import plot_results
-from pathfinder import Results, WHDFS
+from pathfinder import Results, WHDFS, HDFS
 
 np.random.seed(1)
 
@@ -99,8 +100,6 @@ def test_plot_without_results():
 
 def test_plot_sorted_parameter():
     """Test plot_sorted parameter for comparing HDFS and WHDFS visualizations"""
-    from pathfinder.dfs import HDFS, WHDFS
-
     # Create test data
     p, N = 0.1, 10
     pseudo = pseudo_data(N, p)
@@ -142,7 +141,6 @@ def test_plot_sorted_parameter():
 
 def test_paths_dont_land_on_black_squares():
     """Critical test: verify paths never land on black squares (invalid edges)"""
-    from pathfinder.dfs import HDFS, WHDFS
 
     # Create test data with clear structure
     N = 10
@@ -196,7 +194,6 @@ def test_paths_dont_land_on_black_squares():
 
 def test_highlight_top_path():
     """Test highlight_top_path parameter works correctly"""
-    from pathfinder.dfs import HDFS, WHDFS
 
     # Create test data
     N = 8
@@ -313,7 +310,6 @@ def test_plot_requires_bam():
     results = Results(top=5)
 
     # Should raise ValueError when bam is None and results has no bam
-    import pytest
     with pytest.raises(ValueError, match="bam parameter is required"):
         plot_results.plot(results=results)
 
